@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "diurnix"
+dynamic = ["version"]
+description = "Deterministic offline runtime for personal-agent mechanics and daily-life applications"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [{ name = "Ma Zhiyong" }]
+dependencies = ["numpy>=2.0,<3"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2,<2",
+  "hatchling>=1.27,<2",
+  "mypy>=1.14,<2",
+  "pytest>=8.3,<9",
+  "ruff>=0.9,<1",
+]
+torch = ["torch>=2.4,<3"]
+
+[project.scripts]
+diurnix = "diurnix.cli:main"
+
+[tool.hatch.version]
+path = "src/diurnix/_version.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/diurnix"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers"
+testpaths = ["tests"]
+markers = [
+  "slow: deterministic integration or training checks excluded from the fast suite",
+  "model: checks requiring the optional CPU-only torch extra",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests", "examples", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+files = ["src", "scripts"]
+packages = ["diurnix"]
