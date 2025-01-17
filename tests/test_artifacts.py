@@ -30,3 +30,29 @@ def test_artifact_kind_and_version_have_strict_bounds() -> None:
         ArtifactEnvelope.create("bad kind", {})
     with pytest.raises(ValidationError, match="positive"):
         ArtifactEnvelope.create("plan", {}, schema_version=0)
+
+
+def test_artifact_rejects_missing_and_unknown_fields() -> None:
+    valid = ArtifactEnvelope.create("plan", {}).to_dict()
+    missing = dict(valid)
+    missing.pop("kind")
+    with pytest.raises(ValidationError, match="fields"):
+        ArtifactEnvelope.from_dict(missing)
+    with pytest.raises(ValidationError, match="fields"):
+        ArtifactEnvelope.from_dict({**valid, "extra": True})
+
+
+def test_artifact_rejects_nonobject_roots_and_payloads() -> None:
+    with pytest.raises(ValidationError, match="must be an object"):
+        ArtifactEnvelope.from_json("[]")
+    valid = ArtifactEnvelope.create("plan", {}).to_dict()
+    with pytest.raises(ValidationError, match="payload must be an object"):
+        ArtifactEnvelope.from_dict({**valid, "payload": []})
+
+
+def test_artifact_rejects_mistyped_metadata_before_use() -> None:
+    valid = ArtifactEnvelope.create("plan", {}).to_dict()
+    with pytest.raises(ValidationError, match="metadata"):
+        ArtifactEnvelope.from_dict({**valid, "schema_version": "1"})
+    with pytest.raises(ValidationError, match="checksum must be a string"):
+        ArtifactEnvelope.from_dict({**valid, "checksum": 7})
