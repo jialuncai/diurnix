@@ -33,3 +33,27 @@ def test_canonical_json_rejects_naive_datetime() -> None:
     with pytest.raises(ValidationError, match="timezone-aware") as captured:
         canonical_dumps({"when": datetime(2026, 1, 2)})
     assert captured.value.context == {"path": "$.when"}
+
+
+def test_canonical_json_rejects_duplicate_keys() -> None:
+    with pytest.raises(ValidationError, match="duplicate") as captured:
+        canonical_loads('{"same":1,"same":2}')
+    assert captured.value.context == {"path": "$.same"}
+
+
+def test_canonical_json_rejects_nonfinite_numbers_in_both_directions() -> None:
+    with pytest.raises(ValidationError, match="non-finite"):
+        canonical_dumps({"score": float("nan")})
+    with pytest.raises(ValidationError, match="invalid constant"):
+        canonical_loads('{"score":NaN}')
+
+
+def test_canonical_json_rejects_unsupported_values_without_coercion() -> None:
+    with pytest.raises(ValidationError, match="unsupported canonical type") as captured:
+        canonical_dumps({"payload": object()})
+    assert captured.value.context == {"path": "$.payload"}
+
+
+def test_canonical_json_rejects_nonstring_mapping_keys() -> None:
+    with pytest.raises(ValidationError, match="keys must be strings"):
+        canonical_dumps({1: "one"})
