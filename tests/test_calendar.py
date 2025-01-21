@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, time
+from datetime import date, datetime, time
 
 import pytest
 
@@ -35,3 +35,26 @@ def test_date_span_is_inclusive_and_week_start_is_configurable() -> None:
     )
     assert week_start(date(2026, 10, 30)) == date(2026, 10, 26)
     assert week_start(date(2026, 10, 30), first_weekday=6) == date(2026, 10, 25)
+
+
+def test_calendar_rejects_unknown_timezone_and_invalid_fold() -> None:
+    with pytest.raises(ValidationError, match="unknown IANA"):
+        local_datetime(date(2026, 1, 1), time(8), "Mars/Olympus")
+    with pytest.raises(ValidationError, match="fold"):
+        local_datetime(date(2026, 1, 1), time(8), "UTC", fold=2)
+
+
+def test_date_span_rejects_reverse_ranges() -> None:
+    with pytest.raises(ValidationError, match="precedes"):
+        date_span(date(2026, 2, 2), date(2026, 2, 1))
+
+
+def test_week_start_rejects_out_of_range_weekday() -> None:
+    for invalid in (-1, 7):
+        with pytest.raises(ValidationError, match="zero to six"):
+            week_start(date(2026, 1, 1), first_weekday=invalid)
+
+
+def test_calendar_day_addition_rejects_naive_moment() -> None:
+    with pytest.raises(ValidationError, match="timezone-aware"):
+        add_calendar_days(datetime(2026, 1, 1, 8), 1)
