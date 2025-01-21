@@ -58,3 +58,26 @@ class SyntheticClock:
     def pending(self) -> tuple[ScheduledTimer, ...]:
         """Return pending timers in firing order without consuming them."""
         return tuple(sorted(self._timers))
+
+
+@dataclass(frozen=True, slots=True)
+class ClockSnapshot:
+    """Serializable clock state used for deterministic resume."""
+
+    now: datetime
+    next_sequence: int
+    timers: tuple[ScheduledTimer, ...]
+
+
+def snapshot_clock(clock: SyntheticClock) -> ClockSnapshot:
+    """Capture the clock without consuming pending timers."""
+    return ClockSnapshot(clock.now(), clock._sequence, clock.pending())
+
+
+def restore_clock(snapshot: ClockSnapshot) -> SyntheticClock:
+    """Restore an independent clock from a previously captured snapshot."""
+    clock = SyntheticClock(snapshot.now)
+    clock._sequence = snapshot.next_sequence
+    clock._timers = list(snapshot.timers)
+    heapq.heapify(clock._timers)
+    return clock

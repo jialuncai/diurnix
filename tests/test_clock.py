@@ -33,3 +33,24 @@ def test_clock_rejects_naive_start_and_backward_travel() -> None:
     clock = SyntheticClock(START)
     with pytest.raises(ValidationError, match="backward"):
         clock.advance(timedelta(microseconds=-1))
+
+
+def test_clock_snapshot_restores_independent_pending_state() -> None:
+    from diurnix.clock import restore_clock, snapshot_clock
+
+    original = SyntheticClock(START)
+    original.schedule("wake", START + timedelta(hours=1))
+    restored = restore_clock(snapshot_clock(original))
+    assert restored.pending() == original.pending()
+    assert [timer.name for timer in restored.advance(timedelta(hours=1))] == ["wake"]
+    assert len(original.pending()) == 1
+
+
+def test_restored_clock_keeps_timer_tiebreak_sequence() -> None:
+    from diurnix.clock import restore_clock, snapshot_clock
+
+    original = SyntheticClock(START)
+    original.schedule("before", START + timedelta(hours=1))
+    restored = restore_clock(snapshot_clock(original))
+    restored.schedule("after", START + timedelta(hours=1))
+    assert [item.name for item in restored.advance(timedelta(hours=1))] == ["before", "after"]
