@@ -54,3 +54,26 @@ def test_restored_clock_keeps_timer_tiebreak_sequence() -> None:
     restored = restore_clock(snapshot_clock(original))
     restored.schedule("after", START + timedelta(hours=1))
     assert [item.name for item in restored.advance(timedelta(hours=1))] == ["before", "after"]
+
+
+def test_timer_can_fire_at_current_instant() -> None:
+    clock = SyntheticClock(START)
+    clock.schedule("now", START)
+    assert [timer.name for timer in clock.advance(timedelta(0))] == ["now"]
+
+
+def test_timer_rejects_past_naive_and_empty_inputs() -> None:
+    clock = SyntheticClock(START)
+    with pytest.raises(ValidationError, match="past"):
+        clock.schedule("old", START - timedelta(microseconds=1))
+    with pytest.raises(ValidationError, match="timezone-aware"):
+        clock.schedule("naive", datetime(2026, 10, 30, 9))
+    with pytest.raises(ValidationError, match="must not be empty"):
+        clock.schedule("", START)
+
+
+def test_partial_advance_leaves_future_timers_pending() -> None:
+    clock = SyntheticClock(START)
+    expected = clock.schedule("later", START + timedelta(hours=2))
+    assert clock.advance(timedelta(hours=1)) == ()
+    assert clock.pending() == (expected,)
