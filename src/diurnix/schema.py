@@ -54,3 +54,11 @@ class SchemaRegistry:
                 if item_kind == kind
             )
         )
+
+
+def migration_gaps(registry: SchemaRegistry, kind: str, latest: int) -> tuple[int, ...]:
+    """Return source versions missing from a chain ending at ``latest``."""
+    if latest < 1:
+        raise ValidationError("latest schema version must be positive")
+    available = {start for start, _ in registry.transitions(kind)}
+    return tuple(version for version in range(1, latest) if version not in available)

@@ -33,3 +33,19 @@ def test_registry_rejects_duplicate_transition() -> None:
     registry.register("event", 1, dict)
     with pytest.raises(ValidationError, match="already registered"):
         registry.register("event", 1, dict)
+
+
+def test_migration_gaps_reports_every_missing_source_version() -> None:
+    from diurnix.schema import migration_gaps
+
+    registry = SchemaRegistry()
+    registry.register("event", 2, dict)
+    assert migration_gaps(registry, "event", 5) == (1, 3, 4)
+    assert migration_gaps(registry, "other", 1) == ()
+
+
+def test_migration_gaps_rejects_invalid_latest_version() -> None:
+    from diurnix.schema import migration_gaps
+
+    with pytest.raises(ValidationError, match="latest"):
+        migration_gaps(SchemaRegistry(), "event", 0)
