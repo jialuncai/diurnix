@@ -28,3 +28,19 @@ def test_stable_identifier_validates_namespace_and_digest_length() -> None:
     for length in (7, 65):
         with pytest.raises(ValueError, match="8 to 64"):
             stable_identifier("evt", {}, length=length)
+
+
+def test_identifier_distinguishes_type_and_content_changes() -> None:
+    identifiers = {
+        stable_identifier("evt", value, length=32)
+        for value in (1, "1", [1], {"value": 1}, {"value": 2})
+    }
+    assert len(identifiers) == 5
+
+
+def test_identifier_length_controls_only_digest_suffix() -> None:
+    short = stable_identifier("receipt", {"tool": "mail"}, length=8)
+    long = stable_identifier("receipt", {"tool": "mail"}, length=24)
+    assert long.startswith(short)
+    assert len(short) == len("receipt_") + 8
+    assert len(long) == len("receipt_") + 24
