@@ -25,3 +25,20 @@ def test_module_imports_in_fresh_interpreter() -> None:
         text=True,
     )
     assert completed.stdout.strip() == diurnix.__version__
+
+
+def test_foundation_public_api_is_explicit_and_importable() -> None:
+    expected = {
+        "ArtifactEnvelope",
+        "Budget",
+        "DiurnixError",
+        "IntegrityError",
+        "SeededRandom",
+        "SyntheticClock",
+        "Usage",
+        "ValidationError",
+        "__version__",
+    }
+    assert set(diurnix.__all__) == expected
+    for name in expected:
+        assert getattr(diurnix, name) is not None
