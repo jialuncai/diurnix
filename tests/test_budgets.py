@@ -42,3 +42,19 @@ def test_reservation_failure_leaves_original_usage_unchanged() -> None:
     with pytest.raises(ValidationError, match="budget exceeded"):
         reserve(Budget(1, 1, 1), used, Usage(1, 0, 0))
     assert used == Usage(1, 1, 1)
+
+
+def test_usage_rejects_each_negative_dimension() -> None:
+    for kwargs in (
+        {"steps": -1},
+        {"wall_seconds": -0.1},
+        {"money": -0.01},
+    ):
+        with pytest.raises(ValidationError, match="usage"):
+            Usage(**kwargs)
+
+
+def test_budget_rejects_each_negative_limit() -> None:
+    for values in ((-1, 0, 0), (0, -1, 0), (0, 0, -1)):
+        with pytest.raises(ValidationError, match="limits"):
+            Budget(*values)
