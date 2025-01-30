@@ -54,3 +54,22 @@ def test_named_random_streams_reject_duplicates() -> None:
 
     with pytest.raises(ValidationError, match="unique"):
         random_streams(3, ["mail", "mail"])
+
+
+def test_singleton_choice_never_consumes_out_of_bounds_index() -> None:
+    random = SeededRandom(2**64 - 1)
+    assert [random.choice(("only",)) for _ in range(10)] == ["only"] * 10
+
+
+def test_integer_draws_respect_negative_half_open_interval() -> None:
+    random = SeededRandom(123)
+    draws = [random.integer(-3, 2) for _ in range(100)]
+    assert min(draws) == -3
+    assert max(draws) == 1
+    assert 2 not in draws
+
+
+def test_seed_upper_bound_is_exclusive() -> None:
+    SeededRandom(2**64 - 1)
+    with pytest.raises(ValidationError, match="unsigned"):
+        SeededRandom(2**64)
