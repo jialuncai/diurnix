@@ -44,3 +44,11 @@ class SeededRandom:
         digest = content_checksum({"seed": self.seed, "namespace": namespace})
         child_seed = int(digest.removeprefix("sha256:")[:16], 16)
         return SeededRandom(child_seed)
+
+
+def random_streams(seed: int, namespaces: Sequence[str]) -> dict[str, SeededRandom]:
+    """Create unique named child streams and reject duplicate namespaces."""
+    if len(set(namespaces)) != len(namespaces):
+        raise ValidationError("random stream namespaces must be unique")
+    root = SeededRandom(seed)
+    return {namespace: root.fork(namespace) for namespace in namespaces}

@@ -27,3 +27,30 @@ def test_random_range_choice_and_seed_have_strict_bounds() -> None:
         random.integer(2, 2)
     with pytest.raises(ValidationError, match="at least one"):
         random.choice([])
+
+
+def test_fork_depends_on_namespace_not_parent_draw_history() -> None:
+    root = SeededRandom(91)
+    early = root.fork("inbox").integer(0, 1_000_000)
+    for _ in range(20):
+        root.integer(0, 10)
+    late = root.fork("inbox").integer(0, 1_000_000)
+    other = root.fork("ledger").integer(0, 1_000_000)
+    assert early == late
+    assert other != early
+
+
+def test_named_random_streams_are_order_independent() -> None:
+    from diurnix.randomness import random_streams
+
+    left = random_streams(3, ["mail", "habit"])
+    right = random_streams(3, ["habit", "mail"])
+    assert left["mail"].integer(0, 1000) == right["mail"].integer(0, 1000)
+    assert left["habit"].integer(0, 1000) == right["habit"].integer(0, 1000)
+
+
+def test_named_random_streams_reject_duplicates() -> None:
+    from diurnix.randomness import random_streams
+
+    with pytest.raises(ValidationError, match="unique"):
+        random_streams(3, ["mail", "mail"])
