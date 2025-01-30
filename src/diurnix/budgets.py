@@ -58,3 +58,20 @@ class Budget:
             exceeded.append("money")
         if exceeded:
             raise ValidationError("budget exceeded: " + ", ".join(exceeded), path="$.usage")
+
+
+def remaining(budget: Budget, usage: Usage) -> Usage:
+    """Return nonnegative capacity after requiring current usage to fit."""
+    budget.require(usage)
+    return Usage(
+        budget.max_steps - usage.steps,
+        round(budget.max_wall_seconds - usage.wall_seconds, 6),
+        round(budget.max_money - usage.money, 6),
+    )
+
+
+def reserve(budget: Budget, usage: Usage, requested: Usage) -> Usage:
+    """Atomically validate and return usage with a requested reservation."""
+    updated = usage + requested
+    budget.require(updated)
+    return updated
