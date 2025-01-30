@@ -49,3 +49,21 @@ def test_migration_gaps_rejects_invalid_latest_version() -> None:
 
     with pytest.raises(ValidationError, match="latest"):
         migration_gaps(SchemaRegistry(), "event", 0)
+
+
+def test_registry_rejects_backward_and_incomplete_chains() -> None:
+    registry = SchemaRegistry()
+    with pytest.raises(ValidationError, match="backward"):
+        registry.migrate("event", {}, from_version=2, to_version=1)
+    with pytest.raises(ValidationError, match="missing migration") as captured:
+        registry.migrate("event", {}, from_version=1, to_version=2)
+    assert captured.value.context == {"path": "$.schema_version"}
+
+
+def test_registry_rejects_invalid_source_and_nonobject_result() -> None:
+    registry = SchemaRegistry()
+    with pytest.raises(ValidationError, match="positive"):
+        registry.register("event", 0, dict)
+    registry.register("event", 1, lambda value: [])  # type: ignore[arg-type,return-value]
+    with pytest.raises(ValidationError, match="return an object"):
+        registry.migrate("event", {}, from_version=1, to_version=2)
