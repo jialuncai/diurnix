@@ -1,0 +1,48 @@
+"""Typed, versioned personal events used throughout the runtime."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime
+from enum import StrEnum
+from typing import ClassVar
+
+from diurnix.errors import ValidationError
+from diurnix.identifiers import validate_identifier
+
+
+class EventKind(StrEnum):
+    """Closed set of built-in personal event families."""
+
+    INBOX_MESSAGE = "inbox_message"
+    CALENDAR_ENTRY = "calendar_entry"
+    TRANSACTION = "transaction"
+    HABIT_CHECK_IN = "habit_check_in"
+    TIMER_FIRE = "timer_fire"
+    USER_UTTERANCE = "user_utterance"
+
+
+@dataclass(frozen=True, slots=True)
+class PersonalEvent:
+    """Common identity and time fields for immutable personal events."""
+
+    event_id: str
+    occurred_at: datetime
+
+    KIND: ClassVar[EventKind]
+    SCHEMA_VERSION: ClassVar[int] = 1
+
+    def __post_init__(self) -> None:
+        validate_identifier(self.event_id, label="event_id")
+        if self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() is None:
+            raise ValidationError("event time must be timezone-aware", path="$.occurred_at")
+
+    @property
+    def kind(self) -> EventKind:
+        """Return the concrete wire kind."""
+        return self.KIND
+
+
+def event_sort_key(event: PersonalEvent) -> tuple[datetime, str]:
+    """Order events by instant and then stable identifier."""
+    return event.occurred_at, event.event_id
