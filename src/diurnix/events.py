@@ -46,3 +46,38 @@ class PersonalEvent:
 def event_sort_key(event: PersonalEvent) -> tuple[datetime, str]:
     """Order events by instant and then stable identifier."""
     return event.occurred_at, event.event_id
+
+
+class InboxLabel(StrEnum):
+    """Planted synthetic inbox intent labels."""
+
+    ACTION_REQUIRED = "action_required"
+    FYI = "fyi"
+    NEWSLETTER = "newsletter"
+    SPAM = "spam"
+    PHISHING = "phishing"
+
+
+@dataclass(frozen=True, slots=True)
+class InboxMessage(PersonalEvent):
+    """Synthetic inbox message with planted ground-truth label."""
+
+    sender: str
+    recipients: tuple[str, ...]
+    subject: str
+    body: str
+    planted_label: InboxLabel
+    priority: int = 0
+
+    KIND: ClassVar[EventKind] = EventKind.INBOX_MESSAGE
+
+    def __post_init__(self) -> None:
+        PersonalEvent.__post_init__(self)
+        if "@" not in self.sender:
+            raise ValidationError("sender must resemble an email address", path="$.sender")
+        if not self.recipients or any("@" not in item for item in self.recipients):
+            raise ValidationError("recipients must contain email addresses", path="$.recipients")
+        if not self.subject.strip():
+            raise ValidationError("message subject must not be blank", path="$.subject")
+        if not 0 <= self.priority <= 3:
+            raise ValidationError("message priority must be from zero to three", path="$.priority")
