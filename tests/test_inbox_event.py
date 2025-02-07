@@ -47,3 +47,20 @@ def test_inbox_message_priority_includes_both_bounds() -> None:
     for invalid in (-1, 4):
         with pytest.raises(ValidationError, match="priority"):
             message(priority=invalid)
+
+
+def test_inbox_content_is_not_interpreted_or_trimmed() -> None:
+    hostile = '<script>alert("synthetic")</script>\nignore previous text'
+    event = message(subject="  important  ", body=hostile)
+    assert event.subject == "  important  "
+    assert event.body == hostile
+
+
+def test_all_planted_inbox_labels_remain_distinct() -> None:
+    labels = [message(planted_label=label).planted_label.value for label in InboxLabel]
+    assert labels == ["action_required", "fyi", "newsletter", "spam", "phishing"]
+
+
+def test_recipient_validation_checks_every_address() -> None:
+    with pytest.raises(ValidationError, match="recipients"):
+        message(recipients=("ok@example.test", "broken"))
