@@ -81,3 +81,34 @@ class InboxMessage(PersonalEvent):
             raise ValidationError("message subject must not be blank", path="$.subject")
         if not 0 <= self.priority <= 3:
             raise ValidationError("message priority must be from zero to three", path="$.priority")
+
+
+@dataclass(frozen=True, slots=True)
+class CalendarEntry(PersonalEvent):
+    """Calendar interval with optional travel time planted by the factory."""
+
+    title: str
+    starts_at: datetime
+    ends_at: datetime
+    location: str = ""
+    travel_minutes: int = 0
+    planted_conflict: bool = False
+
+    KIND: ClassVar[EventKind] = EventKind.CALENDAR_ENTRY
+
+    def __post_init__(self) -> None:
+        PersonalEvent.__post_init__(self)
+        if not self.title.strip():
+            raise ValidationError("calendar title must not be blank", path="$.title")
+        for path, value in (("starts_at", self.starts_at), ("ends_at", self.ends_at)):
+            if value.tzinfo is None or value.utcoffset() is None:
+                raise ValidationError("calendar bounds must be timezone-aware", path=f"$.{path}")
+        if self.ends_at <= self.starts_at:
+            raise ValidationError("calendar entry must have positive duration", path="$.ends_at")
+        if self.travel_minutes < 0:
+            raise ValidationError("travel minutes cannot be negative", path="$.travel_minutes")
+
+    @property
+    def duration_minutes(self) -> int:
+        """Return elapsed duration rather than wall-clock label difference."""
+        return int((self.ends_at.timestamp() - self.starts_at.timestamp()) // 60)
