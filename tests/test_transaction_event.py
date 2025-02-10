@@ -42,3 +42,24 @@ def test_transaction_requires_portable_currency_code() -> None:
     for currency in ("cny", "CN", "CNY1", "¥¥¥"):
         with pytest.raises(ValidationError, match="currency"):
             transaction(currency=currency)
+
+
+def test_transaction_anomaly_labels_cover_factory_cases() -> None:
+    assert [label.value for label in AnomalyLabel] == [
+        "none",
+        "duplicate",
+        "outlier",
+        "subscription_creep",
+        "miscategorized",
+    ]
+
+
+def test_transaction_rejects_blank_merchant_or_category() -> None:
+    with pytest.raises(ValidationError, match="merchant and category"):
+        transaction(merchant="  ")
+    with pytest.raises(ValidationError, match="merchant and category"):
+        transaction(category="")
+
+
+def test_transaction_keeps_decimal_input_precision_supplied_by_factory() -> None:
+    assert transaction(amount=-12.345678).amount == -12.345678
