@@ -112,3 +112,37 @@ class CalendarEntry(PersonalEvent):
     def duration_minutes(self) -> int:
         """Return elapsed duration rather than wall-clock label difference."""
         return int((self.ends_at.timestamp() - self.starts_at.timestamp()) // 60)
+
+
+class AnomalyLabel(StrEnum):
+    """Planted ledger anomaly families."""
+
+    NONE = "none"
+    DUPLICATE = "duplicate"
+    OUTLIER = "outlier"
+    SUBSCRIPTION_CREEP = "subscription_creep"
+    MISCATEGORIZED = "miscategorized"
+
+
+@dataclass(frozen=True, slots=True)
+class Transaction(PersonalEvent):
+    """Signed monetary transaction with synthetic ground truth."""
+
+    amount: float
+    currency: str
+    merchant: str
+    category: str
+    planted_anomaly: AnomalyLabel = AnomalyLabel.NONE
+
+    KIND: ClassVar[EventKind] = EventKind.TRANSACTION
+
+    def __post_init__(self) -> None:
+        PersonalEvent.__post_init__(self)
+        if not self.amount or self.amount != self.amount or abs(self.amount) == float("inf"):
+            raise ValidationError("transaction amount must be finite and nonzero", path="$.amount")
+        if len(self.currency) != 3 or not self.currency.isalpha() or not self.currency.isupper():
+            raise ValidationError(
+                "currency must be a three-letter uppercase code", path="$.currency"
+            )
+        if not self.merchant.strip() or not self.category.strip():
+            raise ValidationError("merchant and category must not be blank")
