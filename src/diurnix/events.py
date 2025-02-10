@@ -103,7 +103,7 @@ class CalendarEntry(PersonalEvent):
         for path, value in (("starts_at", self.starts_at), ("ends_at", self.ends_at)):
             if value.tzinfo is None or value.utcoffset() is None:
                 raise ValidationError("calendar bounds must be timezone-aware", path=f"$.{path}")
-        if self.ends_at <= self.starts_at:
+        if self.ends_at.timestamp() <= self.starts_at.timestamp():
             raise ValidationError("calendar entry must have positive duration", path="$.ends_at")
         if self.travel_minutes < 0:
             raise ValidationError("travel minutes cannot be negative", path="$.travel_minutes")

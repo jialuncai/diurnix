@@ -41,3 +41,23 @@ def test_calendar_entry_rejects_blank_title_and_negative_travel() -> None:
         entry(title=" ")
     with pytest.raises(ValidationError, match="travel"):
         entry(travel_minutes=-1)
+
+
+def test_calendar_entry_rejects_naive_interval_boundaries() -> None:
+    naive = datetime(2026, 10, 30, 9)
+    with pytest.raises(ValidationError, match="timezone-aware") as start_error:
+        entry(starts_at=naive)
+    assert start_error.value.context == {"path": "$.starts_at"}
+    with pytest.raises(ValidationError, match="timezone-aware") as end_error:
+        entry(ends_at=naive)
+    assert end_error.value.context == {"path": "$.ends_at"}
+
+
+def test_calendar_elapsed_duration_handles_offset_transition() -> None:
+    from datetime import date, time
+
+    from diurnix.calendar import local_datetime
+
+    start = local_datetime(date(2026, 11, 1), time(1, 30), "America/New_York", fold=0)
+    end = local_datetime(date(2026, 11, 1), time(1, 30), "America/New_York", fold=1)
+    assert entry(starts_at=start, ends_at=end).duration_minutes == 60
