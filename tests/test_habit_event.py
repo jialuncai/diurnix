@@ -41,3 +41,17 @@ def test_habit_checkin_rejects_nonfinite_optional_value() -> None:
     for value in (float("nan"), float("inf")):
         with pytest.raises(ValidationError, match="finite"):
             checkin(value=value)
+
+
+def test_habit_status_wire_values_are_stable() -> None:
+    assert [item.value for item in HabitStatus] == ["done", "skipped", "missed"]
+    assert {checkin(status=item).status for item in HabitStatus} == set(HabitStatus)
+
+
+def test_habit_name_must_have_visible_content() -> None:
+    with pytest.raises(ValidationError, match="habit name"):
+        checkin(habit=" 	")
+
+
+def test_valid_leap_day_is_accepted() -> None:
+    assert checkin(local_date="2024-02-29").local_date == "2024-02-29"
