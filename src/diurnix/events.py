@@ -180,3 +180,29 @@ class HabitCheckIn(PersonalEvent):
             raise ValidationError("local date must use ISO format", path="$.local_date") from error
         if self.value is not None and (self.value != self.value or abs(self.value) == float("inf")):
             raise ValidationError("habit value must be finite", path="$.value")
+
+
+@dataclass(frozen=True, slots=True)
+class TimerFire(PersonalEvent):
+    """Observation emitted when a deterministic clock timer becomes due."""
+
+    timer_name: str
+    scheduled_for: datetime
+
+    KIND: ClassVar[EventKind] = EventKind.TIMER_FIRE
+
+    def __post_init__(self) -> None:
+        PersonalEvent.__post_init__(self)
+        if not self.timer_name.strip():
+            raise ValidationError("timer name must not be blank", path="$.timer_name")
+        if self.scheduled_for.tzinfo is None or self.scheduled_for.utcoffset() is None:
+            raise ValidationError("scheduled time must be timezone-aware", path="$.scheduled_for")
+        if self.occurred_at < self.scheduled_for:
+            raise ValidationError(
+                "timer cannot fire before its scheduled time", path="$.occurred_at"
+            )
+
+    @property
+    def lateness_seconds(self) -> float:
+        """Return nonnegative elapsed lateness."""
+        return round(self.occurred_at.timestamp() - self.scheduled_for.timestamp(), 6)
