@@ -28,3 +28,17 @@ def test_timer_fire_requires_named_aware_schedule() -> None:
         TimerFire("timer_1", DUE, " ", DUE)
     with pytest.raises(ValidationError, match="scheduled time"):
         TimerFire("timer_1", DUE, "wake", datetime(2026, 10, 30, 8))
+
+
+def test_timer_lateness_uses_absolute_time_across_offsets() -> None:
+    from datetime import timezone
+
+    plus_eight = timezone(timedelta(hours=8))
+    scheduled = datetime(2026, 10, 30, 16, tzinfo=plus_eight)
+    fired = datetime(2026, 10, 30, 8, 0, 2, tzinfo=UTC)
+    assert TimerFire("timer_1", fired, "wake", scheduled).lateness_seconds == 2.0
+
+
+def test_timer_lateness_is_quantized_to_microseconds() -> None:
+    fired = DUE + timedelta(microseconds=123456)
+    assert TimerFire("timer_1", fired, "wake", DUE).lateness_seconds == 0.123456
