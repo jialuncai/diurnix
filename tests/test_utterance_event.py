@@ -26,3 +26,13 @@ def test_user_utterance_requires_language_region_locale() -> None:
     for locale in ("zh", "zh_CN", "z-CN", "zh-CHN"):
         with pytest.raises(ValidationError, match="language-region"):
             UserUtterance("utterance_1", NOW, "hello", locale)
+
+
+def test_utterance_preserves_embedded_newlines_and_markup() -> None:
+    text = "first line\n<script>synthetic</script>\nlast line"
+    event = UserUtterance("utterance_1", NOW, text, "en-US")
+    assert event.text == text
+
+
+def test_three_letter_language_locale_is_supported() -> None:
+    assert UserUtterance("utterance_1", NOW, "test", "yue-HK").locale == "yue-HK"
