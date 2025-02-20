@@ -146,3 +146,37 @@ class Transaction(PersonalEvent):
             )
         if not self.merchant.strip() or not self.category.strip():
             raise ValidationError("merchant and category must not be blank")
+
+
+class HabitStatus(StrEnum):
+    """Observed habit completion states."""
+
+    DONE = "done"
+    SKIPPED = "skipped"
+    MISSED = "missed"
+
+
+@dataclass(frozen=True, slots=True)
+class HabitCheckIn(PersonalEvent):
+    """One local-day observation for a synthetic habit goal."""
+
+    habit: str
+    local_date: str
+    status: HabitStatus
+    value: float | None = None
+    planted_lapse: bool = False
+
+    KIND: ClassVar[EventKind] = EventKind.HABIT_CHECK_IN
+
+    def __post_init__(self) -> None:
+        PersonalEvent.__post_init__(self)
+        if not self.habit.strip():
+            raise ValidationError("habit name must not be blank", path="$.habit")
+        try:
+            from datetime import date
+
+            date.fromisoformat(self.local_date)
+        except ValueError as error:
+            raise ValidationError("local date must use ISO format", path="$.local_date") from error
+        if self.value is not None and (self.value != self.value or abs(self.value) == float("inf")):
+            raise ValidationError("habit value must be finite", path="$.value")
