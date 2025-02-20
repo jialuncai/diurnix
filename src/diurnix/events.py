@@ -206,3 +206,21 @@ class TimerFire(PersonalEvent):
     def lateness_seconds(self) -> float:
         """Return nonnegative elapsed lateness."""
         return round(self.occurred_at.timestamp() - self.scheduled_for.timestamp(), 6)
+
+
+@dataclass(frozen=True, slots=True)
+class UserUtterance(PersonalEvent):
+    """Literal user text supplied to the deterministic intent router."""
+
+    text: str
+    locale: str = "zh-CN"
+
+    KIND: ClassVar[EventKind] = EventKind.USER_UTTERANCE
+
+    def __post_init__(self) -> None:
+        PersonalEvent.__post_init__(self)
+        if not self.text.strip():
+            raise ValidationError("utterance text must not be blank", path="$.text")
+        parts = self.locale.split("-")
+        if len(parts) != 2 or len(parts[0]) not in (2, 3) or len(parts[1]) != 2:
+            raise ValidationError("locale must use language-region form", path="$.locale")
