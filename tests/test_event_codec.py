@@ -40,3 +40,30 @@ def test_event_encoding_returns_fresh_nested_values() -> None:
     encoded = event_to_dict(event)
     encoded["payload"]["recipients"].append("changed@example.test")
     assert event.recipients == ("b@example.test",)
+
+
+def test_every_event_family_roundtrips_through_typed_union() -> None:
+    from datetime import timedelta
+
+    from diurnix.event_codec import event_from_dict
+    from diurnix.events import (
+        AnomalyLabel,
+        CalendarEntry,
+        HabitCheckIn,
+        HabitStatus,
+        TimerFire,
+        Transaction,
+        UserUtterance,
+    )
+
+    now = datetime(2026, 10, 30, 8, tzinfo=UTC)
+    events = [
+        InboxMessage("mail_1", now, "a@x.test", ("b@x.test",), "s", "b", InboxLabel.FYI),
+        CalendarEntry("cal_1", now, "meeting", now, now + timedelta(hours=1)),
+        Transaction("txn_1", now, -2.0, "CNY", "shop", "food", AnomalyLabel.NONE),
+        HabitCheckIn("habit_1", now, "walk", "2026-10-30", HabitStatus.DONE),
+        TimerFire("timer_1", now, "wake", now),
+        UserUtterance("utterance_1", now, "hello", "en-US"),
+    ]
+    for event in events:
+        assert event_from_dict(event_to_dict(event)) == event
