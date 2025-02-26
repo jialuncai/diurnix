@@ -67,3 +67,29 @@ def test_every_event_family_roundtrips_through_typed_union() -> None:
     ]
     for event in events:
         assert event_from_dict(event_to_dict(event)) == event
+
+
+def test_event_decoder_rejects_schema_drift() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.event_codec import event_from_dict
+
+    with pytest.raises(ValidationError, match="fields"):
+        event_from_dict({"kind": "timer_fire", "schema_version": 1, "payload": {}, "extra": 1})
+    with pytest.raises(ValidationError, match="unsupported"):
+        event_from_dict({"kind": "timer_fire", "schema_version": 2, "payload": {}})
+    with pytest.raises(ValidationError, match="must be an object"):
+        event_from_dict({"kind": "timer_fire", "schema_version": 1, "payload": []})
+
+
+def test_event_decoder_wraps_unknown_kind_and_missing_fields() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.event_codec import event_from_dict
+
+    with pytest.raises(ValidationError, match="invalid unknown_kind"):
+        event_from_dict({"kind": "unknown_kind", "schema_version": 1, "payload": {}})
+    with pytest.raises(ValidationError, match="invalid timer_fire"):
+        event_from_dict({"kind": "timer_fire", "schema_version": 1, "payload": {}})
