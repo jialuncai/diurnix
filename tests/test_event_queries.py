@@ -1,0 +1,27 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+
+from diurnix.event_stream import events_of_kind
+from diurnix.events import EventKind, TimerFire, UserUtterance
+
+NOW = datetime(2026, 10, 30, 8, tzinfo=UTC)
+EVENTS = (
+    TimerFire("timer_1", NOW, "wake", NOW),
+    UserUtterance("utterance_1", NOW + timedelta(minutes=1), "hello", "en-US"),
+    TimerFire("timer_2", NOW + timedelta(minutes=2), "leave", NOW),
+)
+
+
+def test_event_kind_filter_accepts_one_or_many_kinds() -> None:
+    assert [event.event_id for event in events_of_kind(EVENTS, EventKind.TIMER_FIRE)] == [
+        "timer_1",
+        "timer_2",
+    ]
+    assert events_of_kind(EVENTS, [EventKind.TIMER_FIRE, EventKind.USER_UTTERANCE]) == EVENTS
+
+
+def test_event_kind_filter_handles_empty_selection_and_generator() -> None:
+    assert events_of_kind(EVENTS, []) == ()
+    generated = (event for event in EVENTS)
+    assert len(events_of_kind(generated, EventKind.TIMER_FIRE)) == 2

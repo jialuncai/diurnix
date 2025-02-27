@@ -7,7 +7,7 @@ from pathlib import Path
 
 from diurnix.artifacts import ArtifactEnvelope
 from diurnix.event_codec import event_from_envelope, event_to_envelope
-from diurnix.events import PersonalEvent
+from diurnix.events import EventKind, PersonalEvent
 
 
 def events_to_jsonl(events: Iterable[PersonalEvent]) -> str:
@@ -37,3 +37,11 @@ def read_event_file(path: Path) -> tuple[PersonalEvent, ...]:
     if not path.exists():
         return ()
     return events_from_jsonl(path.read_text(encoding="utf-8"))
+
+
+def events_of_kind(
+    events: Iterable[PersonalEvent], kinds: EventKind | Iterable[EventKind]
+) -> tuple[PersonalEvent, ...]:
+    """Select events whose concrete family is in the requested set."""
+    accepted = {kinds} if isinstance(kinds, EventKind) else set(kinds)
+    return tuple(event for event in events if event.kind in accepted)
