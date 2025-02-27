@@ -26,3 +26,18 @@ def test_jsonl_has_one_canonical_envelope_per_event() -> None:
 
 def test_empty_event_sequence_has_empty_byte_representation() -> None:
     assert events_to_jsonl([]) == ""
+
+
+def test_event_jsonl_roundtrip_is_byte_stable() -> None:
+    from diurnix.event_stream import events_from_jsonl
+
+    encoded = events_to_jsonl(sample_events())
+    decoded = events_from_jsonl(encoded)
+    assert list(decoded) == sample_events()
+    assert events_to_jsonl(decoded) == encoded
+
+
+def test_empty_event_jsonl_decodes_to_empty_tuple() -> None:
+    from diurnix.event_stream import events_from_jsonl
+
+    assert events_from_jsonl("") == ()
