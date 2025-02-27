@@ -41,3 +41,37 @@ def test_empty_event_jsonl_decodes_to_empty_tuple() -> None:
     from diurnix.event_stream import events_from_jsonl
 
     assert events_from_jsonl("") == ()
+
+
+def test_event_jsonl_rejects_tampered_payload_checksum() -> None:
+    import pytest
+
+    from diurnix.errors import IntegrityError
+    from diurnix.event_stream import events_from_jsonl
+
+    encoded = events_to_jsonl(sample_events())
+    tampered = encoded.replace("hello", "changed")
+    with pytest.raises(IntegrityError, match="checksum mismatch"):
+        events_from_jsonl(tampered)
+
+
+def test_event_jsonl_rejects_blank_record_between_events() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.event_stream import events_from_jsonl
+
+    lines = events_to_jsonl(sample_events()).splitlines()
+    with pytest.raises(ValidationError, match="invalid JSON"):
+        events_from_jsonl(lines[0] + "\n\n" + lines[1])
+
+
+def test_event_jsonl_rejects_non_event_envelope() -> None:
+    import pytest
+
+    from diurnix.artifacts import ArtifactEnvelope
+    from diurnix.errors import ValidationError
+    from diurnix.event_stream import events_from_jsonl
+
+    with pytest.raises(ValidationError, match="not a personal event"):
+        events_from_jsonl(ArtifactEnvelope.create("plan", {}).to_json())
