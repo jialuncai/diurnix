@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from pathlib import Path
 
 from diurnix.artifacts import ArtifactEnvelope
 from diurnix.event_codec import event_from_envelope, event_to_envelope
@@ -22,3 +23,17 @@ def events_from_jsonl(text: str) -> tuple[PersonalEvent, ...]:
     return tuple(
         event_from_envelope(ArtifactEnvelope.from_json(line)) for line in text.splitlines()
     )
+
+
+def append_event(path: Path, event: PersonalEvent) -> None:
+    """Append exactly one encoded event, creating parent directories if needed."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="\n") as stream:
+        stream.write(events_to_jsonl((event,)))
+
+
+def read_event_file(path: Path) -> tuple[PersonalEvent, ...]:
+    """Read a complete UTF-8 event log, treating a missing file as empty."""
+    if not path.exists():
+        return ()
+    return events_from_jsonl(path.read_text(encoding="utf-8"))
