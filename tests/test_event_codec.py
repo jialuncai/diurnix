@@ -93,3 +93,27 @@ def test_event_decoder_wraps_unknown_kind_and_missing_fields() -> None:
         event_from_dict({"kind": "unknown_kind", "schema_version": 1, "payload": {}})
     with pytest.raises(ValidationError, match="invalid timer_fire"):
         event_from_dict({"kind": "timer_fire", "schema_version": 1, "payload": {}})
+
+
+def test_event_integrity_envelope_roundtrips_and_detects_wrong_kind() -> None:
+    import pytest
+
+    from diurnix.artifacts import ArtifactEnvelope
+    from diurnix.errors import ValidationError
+    from diurnix.event_codec import event_from_envelope, event_to_envelope
+
+    event = InboxMessage(
+        "mail_1",
+        datetime(2026, 10, 30, 8, tzinfo=UTC),
+        "a@example.test",
+        ("b@example.test",),
+        "Review",
+        "Body",
+        InboxLabel.FYI,
+    )
+    assert (
+        event_from_envelope(ArtifactEnvelope.from_json(event_to_envelope(event).to_json())) == event
+    )
+    wrong = ArtifactEnvelope.create("plan", event_to_dict(event))
+    with pytest.raises(ValidationError, match="not a personal event"):
+        event_from_envelope(wrong)

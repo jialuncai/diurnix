@@ -7,6 +7,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
+from diurnix.artifacts import ArtifactEnvelope
 from diurnix.errors import ValidationError
 from diurnix.events import (
     AnomalyLabel,
@@ -75,3 +76,15 @@ def event_from_dict(value: dict[str, Any]) -> PersonalEvent:
         return UserUtterance(**payload)
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError(f"invalid {value.get('kind', 'unknown')} event payload") from error
+
+
+def event_to_envelope(event: PersonalEvent) -> ArtifactEnvelope:
+    """Wrap one encoded event in a checksummed artifact envelope."""
+    return ArtifactEnvelope.create("personal.event", event_to_dict(event))
+
+
+def event_from_envelope(envelope: ArtifactEnvelope) -> PersonalEvent:
+    """Require the personal-event envelope kind before decoding."""
+    if envelope.kind != "personal.event":
+        raise ValidationError("artifact is not a personal event", path="$.kind")
+    return event_from_dict(envelope.payload)
