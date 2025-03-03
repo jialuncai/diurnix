@@ -25,3 +25,24 @@ def test_event_kind_filter_handles_empty_selection_and_generator() -> None:
     assert events_of_kind(EVENTS, []) == ()
     generated = (event for event in EVENTS)
     assert len(events_of_kind(generated, EventKind.TIMER_FIRE)) == 2
+
+
+def test_time_filter_uses_half_open_boundaries() -> None:
+    from diurnix.event_stream import events_between
+
+    selected = events_between(EVENTS, NOW, NOW + timedelta(minutes=2))
+    assert [event.event_id for event in selected] == ["timer_1", "utterance_1"]
+    assert events_between(EVENTS, NOW, NOW) == ()
+
+
+def test_time_filter_compares_absolute_instants_across_offsets() -> None:
+    from datetime import timezone
+
+    from diurnix.event_stream import events_between
+
+    plus_eight = timezone(timedelta(hours=8))
+    local_start = datetime(2026, 10, 30, 16, tzinfo=plus_eight)
+    local_end = datetime(2026, 10, 30, 16, 1, tzinfo=plus_eight)
+    assert [event.event_id for event in events_between(EVENTS, local_start, local_end)] == [
+        "timer_1"
+    ]

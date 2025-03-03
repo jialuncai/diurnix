@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from datetime import datetime
 from pathlib import Path
 
 from diurnix.artifacts import ArtifactEnvelope
+from diurnix.errors import ValidationError
 from diurnix.event_codec import event_from_envelope, event_to_envelope
 from diurnix.events import EventKind, PersonalEvent
 
@@ -45,3 +47,15 @@ def events_of_kind(
     """Select events whose concrete family is in the requested set."""
     accepted = {kinds} if isinstance(kinds, EventKind) else set(kinds)
     return tuple(event for event in events if event.kind in accepted)
+
+
+def events_between(
+    events: Iterable[PersonalEvent], start: datetime, end: datetime
+) -> tuple[PersonalEvent, ...]:
+    """Select events in the half-open absolute-time interval ``[start, end)``."""
+    if any(value.tzinfo is None or value.utcoffset() is None for value in (start, end)):
+        raise ValidationError("event query bounds must be timezone-aware")
+    if end.timestamp() < start.timestamp():
+        raise ValidationError("event query end precedes start")
+    start_ts, end_ts = start.timestamp(), end.timestamp()
+    return tuple(event for event in events if start_ts <= event.occurred_at.timestamp() < end_ts)
