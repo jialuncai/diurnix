@@ -59,3 +59,17 @@ def events_between(
         raise ValidationError("event query end precedes start")
     start_ts, end_ts = start.timestamp(), end.timestamp()
     return tuple(event for event in events if start_ts <= event.occurred_at.timestamp() < end_ts)
+
+
+def deduplicate_events(events: Iterable[PersonalEvent]) -> tuple[PersonalEvent, ...]:
+    """Keep first identical IDs and reject IDs reused for different content."""
+    seen: dict[str, PersonalEvent] = {}
+    result: list[PersonalEvent] = []
+    for event in events:
+        previous = seen.get(event.event_id)
+        if previous is None:
+            seen[event.event_id] = event
+            result.append(event)
+        elif previous != event:
+            raise ValidationError(f"conflicting event id: {event.event_id}", path="$.event_id")
+    return tuple(result)
