@@ -46,3 +46,22 @@ def test_time_filter_compares_absolute_instants_across_offsets() -> None:
     assert [event.event_id for event in events_between(EVENTS, local_start, local_end)] == [
         "timer_1"
     ]
+
+
+def test_time_filter_rejects_naive_or_reversed_bounds() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.event_stream import events_between
+
+    with pytest.raises(ValidationError, match="timezone-aware"):
+        events_between(EVENTS, datetime(2026, 10, 30), NOW)
+    with pytest.raises(ValidationError, match="precedes"):
+        events_between(EVENTS, NOW + timedelta(seconds=1), NOW)
+
+
+def test_event_queries_preserve_original_input_order() -> None:
+    from diurnix.event_stream import events_between
+
+    reversed_events = tuple(reversed(EVENTS))
+    assert events_between(reversed_events, NOW, NOW + timedelta(hours=1)) == reversed_events
