@@ -26,3 +26,18 @@ def test_event_deduplication_rejects_id_content_conflict() -> None:
 
 def test_event_deduplication_accepts_empty_iterable() -> None:
     assert deduplicate_events(event for event in ()) == ()
+
+
+def test_merge_histories_orders_events_and_collapses_shared_records() -> None:
+    from diurnix.event_stream import merge_event_histories
+
+    assert merge_event_histories((SECOND, FIRST), (FIRST,)) == (FIRST, SECOND)
+    assert merge_event_histories() == ()
+
+
+def test_merge_histories_rejects_cross_history_conflicts() -> None:
+    from diurnix.event_stream import merge_event_histories
+
+    conflict = TimerFire("timer_1", NOW + timedelta(seconds=1), "wake", NOW)
+    with pytest.raises(ValidationError, match="conflicting"):
+        merge_event_histories((FIRST,), (conflict,))

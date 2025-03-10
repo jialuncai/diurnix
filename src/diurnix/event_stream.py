@@ -9,7 +9,7 @@ from pathlib import Path
 from diurnix.artifacts import ArtifactEnvelope
 from diurnix.errors import ValidationError
 from diurnix.event_codec import event_from_envelope, event_to_envelope
-from diurnix.events import EventKind, PersonalEvent
+from diurnix.events import EventKind, PersonalEvent, event_sort_key
 
 
 def events_to_jsonl(events: Iterable[PersonalEvent]) -> str:
@@ -73,3 +73,9 @@ def deduplicate_events(events: Iterable[PersonalEvent]) -> tuple[PersonalEvent, 
         elif previous != event:
             raise ValidationError(f"conflicting event id: {event.event_id}", path="$.event_id")
     return tuple(result)
+
+
+def merge_event_histories(*histories: Iterable[PersonalEvent]) -> tuple[PersonalEvent, ...]:
+    """Deduplicate histories and return stable chronological order."""
+    combined = (event for history in histories for event in history)
+    return tuple(sorted(deduplicate_events(combined), key=event_sort_key))
