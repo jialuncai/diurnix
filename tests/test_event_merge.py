@@ -41,3 +41,21 @@ def test_merge_histories_rejects_cross_history_conflicts() -> None:
     conflict = TimerFire("timer_1", NOW + timedelta(seconds=1), "wake", NOW)
     with pytest.raises(ValidationError, match="conflicting"):
         merge_event_histories((FIRST,), (conflict,))
+
+
+def test_merge_histories_breaks_instant_ties_by_event_id() -> None:
+    from diurnix.event_stream import merge_event_histories
+
+    a = TimerFire("timer_a", NOW, "a", NOW)
+    z = TimerFire("timer_z", NOW, "z", NOW)
+    assert merge_event_histories((z,), (a,)) == (a, z)
+
+
+def test_merge_histories_does_not_mutate_lists() -> None:
+    from diurnix.event_stream import merge_event_histories
+
+    left = [SECOND, FIRST]
+    right = [FIRST]
+    merge_event_histories(left, right)
+    assert left == [SECOND, FIRST]
+    assert right == [FIRST]
