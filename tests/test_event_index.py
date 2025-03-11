@@ -32,3 +32,17 @@ def test_event_index_counts_only_present_families() -> None:
     counts = EventIndex((TIMER, UTTERANCE)).count_by_kind()
     assert counts == {EventKind.TIMER_FIRE: 1, EventKind.USER_UTTERANCE: 1}
     assert EventKind.TRANSACTION not in counts
+
+
+def test_event_index_rejects_conflicting_identity() -> None:
+    conflict = TimerFire("timer_1", NOW + timedelta(seconds=1), "wake", NOW)
+    with pytest.raises(ValidationError, match="conflicting event id"):
+        EventIndex((TIMER, conflict))
+
+
+def test_empty_event_index_has_total_read_operations() -> None:
+    index = EventIndex(())
+    assert len(index) == 0
+    assert index.all() == ()
+    assert index.count_by_kind() == {}
+    assert index.get("anything") is None
