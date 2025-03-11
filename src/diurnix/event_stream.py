@@ -10,6 +10,7 @@ from diurnix.artifacts import ArtifactEnvelope
 from diurnix.errors import ValidationError
 from diurnix.event_codec import event_from_envelope, event_to_envelope
 from diurnix.events import EventKind, PersonalEvent, event_sort_key
+from diurnix.integrity import bytes_checksum
 
 
 def events_to_jsonl(events: Iterable[PersonalEvent]) -> str:
@@ -79,3 +80,14 @@ def merge_event_histories(*histories: Iterable[PersonalEvent]) -> tuple[Personal
     """Deduplicate histories and return stable chronological order."""
     combined = (event for history in histories for event in history)
     return tuple(sorted(deduplicate_events(combined), key=event_sort_key))
+
+
+def event_manifest(events: Iterable[PersonalEvent]) -> dict[str, object]:
+    """Describe count, ordered identities, and exact JSONL byte checksum."""
+    materialized = tuple(events)
+    content = events_to_jsonl(materialized).encode("utf-8")
+    return {
+        "count": len(materialized),
+        "event_ids": [event.event_id for event in materialized],
+        "checksum": bytes_checksum(content),
+    }
