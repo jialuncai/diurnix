@@ -52,3 +52,24 @@ def validate_correspondents(items: tuple[Correspondent, ...]) -> None:
     emails = [item.email.casefold() for item in items]
     if len(set(emails)) != len(emails):
         raise ValidationError("correspondent emails must be unique")
+
+
+@dataclass(frozen=True, slots=True)
+class MerchantProfile:
+    """Synthetic merchant baseline for planted transaction anomalies."""
+
+    name: str
+    category: str
+    typical_amount: float
+    recurring: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.name.strip() or not self.category.strip():
+            raise ValidationError("merchant name and category must not be blank")
+        if self.typical_amount <= 0 or self.typical_amount == float("inf"):
+            raise ValidationError("typical merchant amount must be positive and finite")
+
+
+def merchant_categories(items: tuple[MerchantProfile, ...]) -> tuple[str, ...]:
+    """Return first-seen category order without duplicates."""
+    return tuple(dict.fromkeys(item.category for item in items))
