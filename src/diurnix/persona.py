@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import time
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from diurnix.errors import ValidationError
 
@@ -93,3 +94,36 @@ class HabitGoal:
             raise ValidationError("habit preferred hour must be from zero to 23")
         if not 0 <= self.grace_days <= 3:
             raise ValidationError("habit grace days must be from zero to three")
+
+
+@dataclass(frozen=True, slots=True)
+class Persona:
+    """Complete synthetic identity and daily-life generation configuration."""
+
+    persona_id: str
+    name: str
+    timezone: str
+    work_hours: WorkHours
+    correspondents: tuple[Correspondent, ...]
+    merchants: tuple[MerchantProfile, ...]
+    habit_goals: tuple[HabitGoal, ...]
+
+    def __post_init__(self) -> None:
+        from diurnix.identifiers import validate_identifier
+
+        validate_identifier(self.persona_id, label="persona_id")
+        if not self.name.strip():
+            raise ValidationError("persona name must not be blank")
+        try:
+            ZoneInfo(self.timezone)
+        except ZoneInfoNotFoundError as error:
+            raise ValidationError("persona timezone must be an IANA name") from error
+        validate_correspondents(self.correspondents)
+        if not self.merchants or not self.habit_goals:
+            raise ValidationError("persona requires merchants and habit goals")
+        merchant_names = [item.name.casefold() for item in self.merchants]
+        habit_names = [item.name.casefold() for item in self.habit_goals]
+        if len(set(merchant_names)) != len(merchant_names):
+            raise ValidationError("persona merchant names must be unique")
+        if len(set(habit_names)) != len(habit_names):
+            raise ValidationError("persona habit names must be unique")
