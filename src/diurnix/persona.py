@@ -73,3 +73,23 @@ class MerchantProfile:
 def merchant_categories(items: tuple[MerchantProfile, ...]) -> tuple[str, ...]:
     """Return first-seen category order without duplicates."""
     return tuple(dict.fromkeys(item.category for item in items))
+
+
+@dataclass(frozen=True, slots=True)
+class HabitGoal:
+    """Synthetic weekly habit target used to plant check-in streams."""
+
+    name: str
+    target_days_per_week: int
+    preferred_hour: int
+    grace_days: int = 0
+
+    def __post_init__(self) -> None:
+        if not self.name.strip():
+            raise ValidationError("habit goal name must not be blank")
+        if not 1 <= self.target_days_per_week <= 7:
+            raise ValidationError("habit target days must be from one to seven")
+        if not 0 <= self.preferred_hour <= 23:
+            raise ValidationError("habit preferred hour must be from zero to 23")
+        if not 0 <= self.grace_days <= 3:
+            raise ValidationError("habit grace days must be from zero to three")
