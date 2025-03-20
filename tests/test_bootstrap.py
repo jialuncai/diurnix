@@ -31,11 +31,18 @@ def test_foundation_public_api_is_explicit_and_importable() -> None:
     expected = {
         "ArtifactEnvelope",
         "Budget",
+        "CalendarEntry",
         "DiurnixError",
+        "HabitCheckIn",
+        "InboxMessage",
         "IntegrityError",
+        "PersonalEvent",
         "SeededRandom",
         "SyntheticClock",
+        "TimerFire",
+        "Transaction",
         "Usage",
+        "UserUtterance",
         "ValidationError",
         "__version__",
     }
