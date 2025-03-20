@@ -27,3 +27,28 @@ class WorkHours:
     def contains(self, weekday: int, wall_time: time) -> bool:
         """Return whether a local wall time is in the half-open work window."""
         return weekday in self.weekdays and self.starts_at <= wall_time < self.ends_at
+
+
+@dataclass(frozen=True, slots=True)
+class Correspondent:
+    """Synthetic contact used only by the offline factory."""
+
+    name: str
+    email: str
+    relationship: str
+    trusted: bool = True
+
+    def __post_init__(self) -> None:
+        if not self.name.strip() or not self.relationship.strip():
+            raise ValidationError("correspondent name and relationship must not be blank")
+        if "@" not in self.email or self.email.startswith("@") or self.email.endswith("@"):
+            raise ValidationError("correspondent email is invalid", path="$.email")
+
+
+def validate_correspondents(items: tuple[Correspondent, ...]) -> None:
+    """Require usable and unique synthetic contact identities."""
+    if not items:
+        raise ValidationError("persona requires at least one correspondent")
+    emails = [item.email.casefold() for item in items]
+    if len(set(emails)) != len(emails):
+        raise ValidationError("correspondent emails must be unique")
