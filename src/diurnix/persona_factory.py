@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import time
+from datetime import date, datetime, time
 
 from diurnix.identifiers import stable_identifier
 from diurnix.persona import Correspondent, HabitGoal, MerchantProfile, Persona, WorkHours
@@ -30,3 +30,15 @@ def create_persona(seed: int) -> Persona:
     )
     goals = (HabitGoal("晨间步行", 5, 7, 1), HabitGoal("阅读", 6, 21, 0))
     return Persona(persona_id, name, zone, WorkHours(time(9), time(18)), contacts, merchants, goals)
+
+
+def work_bounds(persona: Persona, day: date) -> tuple[datetime, datetime] | None:
+    """Return aware local bounds for a workday or ``None`` on days off."""
+    from diurnix.calendar import local_datetime
+
+    if day.weekday() not in persona.work_hours.weekdays:
+        return None
+    return (
+        local_datetime(day, persona.work_hours.starts_at, persona.timezone),
+        local_datetime(day, persona.work_hours.ends_at, persona.timezone),
+    )
