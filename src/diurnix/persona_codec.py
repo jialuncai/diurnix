@@ -6,6 +6,7 @@ from datetime import time
 from typing import Any
 
 from diurnix.errors import ValidationError
+from diurnix.integrity import content_checksum
 from diurnix.persona import Correspondent, HabitGoal, MerchantProfile, Persona, WorkHours
 
 
@@ -82,3 +83,15 @@ def persona_from_dict(value: dict[str, Any]) -> Persona:
         )
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError("invalid persona manifest payload") from error
+
+
+def persona_manifest(persona: Persona, *, seed: int) -> dict[str, Any]:
+    """Return reproducibility metadata tied to all encoded persona inputs."""
+    payload = persona_to_dict(persona)
+    return {
+        "factory": "diurnix.synthetic-persona",
+        "factory_version": 1,
+        "seed": seed,
+        "persona_checksum": content_checksum(payload),
+        "persona": payload,
+    }
