@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from datetime import time
 from typing import Any
 
-from diurnix.persona import Persona
+from diurnix.errors import ValidationError
+from diurnix.persona import Correspondent, HabitGoal, MerchantProfile, Persona, WorkHours
 
 
 def persona_to_dict(persona: Persona) -> dict[str, Any]:
@@ -47,3 +49,36 @@ def persona_to_dict(persona: Persona) -> dict[str, Any]:
             for item in persona.habit_goals
         ],
     }
+
+
+def persona_from_dict(value: dict[str, Any]) -> Persona:
+    """Decode the strict current persona schema."""
+    expected = {
+        "schema_version",
+        "persona_id",
+        "name",
+        "timezone",
+        "work_hours",
+        "correspondents",
+        "merchants",
+        "habit_goals",
+    }
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("persona manifest does not match schema")
+    try:
+        hours = value["work_hours"]
+        return Persona(
+            value["persona_id"],
+            value["name"],
+            value["timezone"],
+            WorkHours(
+                time.fromisoformat(hours["starts_at"]),
+                time.fromisoformat(hours["ends_at"]),
+                tuple(hours["weekdays"]),
+            ),
+            tuple(Correspondent(**item) for item in value["correspondents"]),
+            tuple(MerchantProfile(**item) for item in value["merchants"]),
+            tuple(HabitGoal(**item) for item in value["habit_goals"]),
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid persona manifest payload") from error

@@ -21,3 +21,23 @@ def test_persona_mapping_is_canonical_json_compatible() -> None:
     assert text.startswith('{"correspondents":[')
     assert '"schema_version":1' in text
     assert "example.test" in text
+
+
+def test_persona_manifest_roundtrips_every_seeded_field() -> None:
+    from diurnix.persona_codec import persona_from_dict
+
+    original = create_persona(11)
+    assert persona_from_dict(persona_to_dict(original)) == original
+
+
+def test_persona_decoder_rejects_schema_drift() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.persona_codec import persona_from_dict
+
+    encoded = persona_to_dict(create_persona(11))
+    with pytest.raises(ValidationError, match="schema"):
+        persona_from_dict({**encoded, "extra": True})
+    with pytest.raises(ValidationError, match="schema"):
+        persona_from_dict({**encoded, "schema_version": 2})
