@@ -41,3 +41,27 @@ def test_persona_decoder_rejects_schema_drift() -> None:
         persona_from_dict({**encoded, "extra": True})
     with pytest.raises(ValidationError, match="schema"):
         persona_from_dict({**encoded, "schema_version": 2})
+
+
+def test_persona_decoder_wraps_missing_nested_fields() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.persona_codec import persona_from_dict
+
+    encoded = persona_to_dict(create_persona(11))
+    encoded["work_hours"].pop("starts_at")
+    with pytest.raises(ValidationError, match="invalid persona"):
+        persona_from_dict(encoded)
+
+
+def test_persona_decoder_still_applies_domain_validation() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.persona_codec import persona_from_dict
+
+    encoded = persona_to_dict(create_persona(11))
+    encoded["timezone"] = "Invalid/Zone"
+    with pytest.raises(ValidationError, match="IANA"):
+        persona_from_dict(encoded)
