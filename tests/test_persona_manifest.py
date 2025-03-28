@@ -20,3 +20,16 @@ def test_persona_manifest_is_reproducible() -> None:
     assert persona_manifest(create_persona(7), seed=7) != persona_manifest(
         create_persona(8), seed=8
     )
+
+
+def test_persona_manifest_has_stable_top_level_shape() -> None:
+    manifest = persona_manifest(create_persona(7), seed=7)
+    assert list(manifest) == [
+        "factory",
+        "factory_version",
+        "seed",
+        "persona_checksum",
+        "persona",
+    ]
+    assert manifest["factory_version"] == 1
+    assert str(manifest["persona_checksum"]).startswith("sha256:")
