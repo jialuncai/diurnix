@@ -69,3 +69,16 @@ def generate_inbox_week(
             occurred = start + timedelta(days=day, minutes=slot * 7)
             result.append(generate_inbox_message(persona, seed, index, occurred))
     return tuple(result)
+
+
+def inbox_ground_truth(messages: tuple[InboxMessage, ...]) -> dict[str, str]:
+    """Return event-to-label truth separately from classifier inputs."""
+    return {message.event_id: message.planted_label.value for message in messages}
+
+
+def inbox_label_counts(messages: tuple[InboxMessage, ...]) -> dict[str, int]:
+    """Count planted classes in stable enum order, including absent classes."""
+    return {
+        label.value: sum(message.planted_label is label for message in messages)
+        for label in InboxLabel
+    }
