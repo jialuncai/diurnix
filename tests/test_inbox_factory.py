@@ -41,3 +41,30 @@ def test_inbox_generation_matches_sender_trust_to_pattern() -> None:
         message = generate_inbox_message(persona, 9, index, datetime(2026, 10, 30, 8, tzinfo=UTC))
         expected = message.planted_label not in (InboxLabel.SPAM, InboxLabel.PHISHING)
         assert trusted[message.sender] is expected
+
+
+def test_inbox_week_has_ordered_unique_events() -> None:
+    from datetime import UTC, datetime
+
+    from diurnix.persona_factory import create_persona
+    from diurnix.synthetic import generate_inbox_week
+
+    events = generate_inbox_week(create_persona(3), 9, datetime(2026, 10, 26, 8, tzinfo=UTC))
+    assert len(events) == 35
+    assert len({event.event_id for event in events}) == 35
+    assert list(events) == sorted(events, key=lambda item: item.occurred_at)
+
+
+def test_inbox_week_validates_daily_volume() -> None:
+    from datetime import UTC, datetime
+
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.persona_factory import create_persona
+    from diurnix.synthetic import generate_inbox_week
+
+    with pytest.raises(ValidationError, match="positive"):
+        generate_inbox_week(
+            create_persona(3), 9, datetime(2026, 10, 26, 8, tzinfo=UTC), messages_per_day=0
+        )

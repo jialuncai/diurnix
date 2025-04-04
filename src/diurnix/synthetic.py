@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from diurnix.events import InboxLabel, InboxMessage
 from diurnix.persona import Persona
@@ -52,3 +52,20 @@ def generate_inbox_message(
         pattern.label,
         3 if pattern.label is InboxLabel.ACTION_REQUIRED else 0,
     )
+
+
+def generate_inbox_week(
+    persona: Persona, seed: int, start: datetime, *, messages_per_day: int = 5
+) -> tuple[InboxMessage, ...]:
+    """Generate seven ordered local-day batches without network data."""
+    if messages_per_day < 1:
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("messages per day must be positive")
+    result = []
+    for day in range(7):
+        for slot in range(messages_per_day):
+            index = day * messages_per_day + slot
+            occurred = start + timedelta(days=day, minutes=slot * 7)
+            result.append(generate_inbox_message(persona, seed, index, occurred))
+    return tuple(result)
