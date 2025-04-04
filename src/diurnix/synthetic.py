@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
-from diurnix.events import InboxLabel
+from diurnix.events import InboxLabel, InboxMessage
+from diurnix.persona import Persona
+from diurnix.randomness import SeededRandom
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,3 +30,25 @@ INBOX_PATTERNS = (
         InboxLabel.PHISHING, "账户异常", "点击仿冒链接并输入密码。", "credential request", False
     ),
 )
+
+
+def generate_inbox_message(
+    persona: Persona, seed: int, index: int, occurred_at: datetime
+) -> InboxMessage:
+    """Generate one reproducible message and its planted truth label."""
+    random = SeededRandom(seed).fork(f"inbox-{index}")
+    pattern = random.choice(INBOX_PATTERNS)
+    candidates = tuple(
+        item for item in persona.correspondents if item.trusted == pattern.trusted_sender
+    )
+    sender = random.choice(candidates or persona.correspondents)
+    return InboxMessage(
+        f"mail_{seed}_{index}",
+        occurred_at,
+        sender.email,
+        ("persona@example.test",),
+        pattern.subject,
+        pattern.body,
+        pattern.label,
+        3 if pattern.label is InboxLabel.ACTION_REQUIRED else 0,
+    )
