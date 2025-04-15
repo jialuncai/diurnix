@@ -40,3 +40,27 @@ def generate_calendar_week(persona: Persona, seed: int, start: date) -> tuple[Ca
         result.append(generate_calendar_entry(persona, seed, len(result), day, hour=10))
         result.append(generate_calendar_entry(persona, seed, len(result), day, hour=14))
     return tuple(result)
+
+
+def plant_calendar_conflict(source: CalendarEntry, seed: int, index: int) -> CalendarEntry:
+    """Create a labeled interval that overlaps the middle of ``source``."""
+    start = source.starts_at + timedelta(minutes=max(1, source.duration_minutes // 2))
+    return CalendarEntry(
+        f"calendar_conflict_{seed}_{index}",
+        start,
+        "合成冲突",
+        start,
+        source.ends_at + timedelta(minutes=15),
+        source.location,
+        planted_conflict=True,
+    )
+
+
+def calendar_week_with_conflict(
+    persona: Persona, seed: int, start: date
+) -> tuple[CalendarEntry, ...]:
+    """Generate one week and plant one explicit overlapping pair."""
+    base = list(generate_calendar_week(persona, seed, start))
+    if base:
+        base.append(plant_calendar_conflict(base[2], seed, 0))
+    return tuple(sorted(base, key=lambda entry: (entry.starts_at, entry.event_id)))
