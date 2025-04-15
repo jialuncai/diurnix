@@ -64,3 +64,26 @@ def calendar_week_with_conflict(
     if base:
         base.append(plant_calendar_conflict(base[2], seed, 0))
     return tuple(sorted(base, key=lambda entry: (entry.starts_at, entry.event_id)))
+
+
+def with_travel_constraints(
+    entries: tuple[CalendarEntry, ...], seed: int
+) -> tuple[CalendarEntry, ...]:
+    """Copy appointments with seeded travel buffers for non-home locations."""
+    random = SeededRandom(seed).fork("calendar-travel")
+    result = []
+    for entry in entries:
+        travel = 0 if entry.location == "home" else random.choice((10, 20, 30, 45))
+        result.append(
+            CalendarEntry(
+                entry.event_id,
+                entry.occurred_at,
+                entry.title,
+                entry.starts_at,
+                entry.ends_at,
+                entry.location,
+                travel,
+                entry.planted_conflict,
+            )
+        )
+    return tuple(result)
