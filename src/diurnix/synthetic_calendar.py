@@ -87,3 +87,12 @@ def with_travel_constraints(
             )
         )
     return tuple(result)
+
+
+def calendar_ground_truth(entries: tuple[CalendarEntry, ...]) -> dict[str, object]:
+    """Describe planted conflict IDs and travel requirements."""
+    return {
+        "conflict_ids": [entry.event_id for entry in entries if entry.planted_conflict],
+        "travel_minutes": {entry.event_id: entry.travel_minutes for entry in entries},
+        "entry_count": len(entries),
+    }
