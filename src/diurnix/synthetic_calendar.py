@@ -28,3 +28,15 @@ def generate_calendar_entry(
         starts_at + timedelta(minutes=duration),
         random.choice(_LOCATIONS),
     )
+
+
+def generate_calendar_week(persona: Persona, seed: int, start: date) -> tuple[CalendarEntry, ...]:
+    """Generate morning and afternoon appointments on configured workdays."""
+    result = []
+    for offset in range(7):
+        day = start + timedelta(days=offset)
+        if day.weekday() not in persona.work_hours.weekdays:
+            continue
+        result.append(generate_calendar_entry(persona, seed, len(result), day, hour=10))
+        result.append(generate_calendar_entry(persona, seed, len(result), day, hour=14))
+    return tuple(result)

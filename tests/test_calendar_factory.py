@@ -21,3 +21,21 @@ def test_calendar_entry_index_changes_identity_and_content_stream() -> None:
     entries = [generate_calendar_entry(persona, 8, index, date(2026, 10, 30)) for index in range(8)]
     assert len({entry.event_id for entry in entries}) == 8
     assert len({(entry.title, entry.location, entry.duration_minutes) for entry in entries}) > 1
+
+
+def test_calendar_week_uses_only_persona_workdays() -> None:
+    from diurnix.synthetic_calendar import generate_calendar_week
+
+    persona = create_persona(3)
+    entries = generate_calendar_week(persona, 8, date(2026, 10, 26))
+    assert len(entries) == 10
+    assert {entry.starts_at.weekday() for entry in entries} == {0, 1, 2, 3, 4}
+    assert [entry.starts_at.hour for entry in entries] == [10, 14] * 5
+
+
+def test_calendar_week_handles_non_monday_start_without_duplication() -> None:
+    from diurnix.synthetic_calendar import generate_calendar_week
+
+    entries = generate_calendar_week(create_persona(3), 8, date(2026, 10, 30))
+    assert len(entries) == 10
+    assert len({entry.event_id for entry in entries}) == 10
