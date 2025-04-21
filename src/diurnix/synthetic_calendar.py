@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, time, timedelta
 
 from diurnix.calendar import local_datetime
+from diurnix.event_stream import event_manifest
 from diurnix.events import CalendarEntry
 from diurnix.persona import Persona
 from diurnix.randomness import SeededRandom
@@ -95,4 +96,15 @@ def calendar_ground_truth(entries: tuple[CalendarEntry, ...]) -> dict[str, objec
         "conflict_ids": [entry.event_id for entry in entries if entry.planted_conflict],
         "travel_minutes": {entry.event_id: entry.travel_minutes for entry in entries},
         "entry_count": len(entries),
+    }
+
+
+def calendar_manifest(entries: tuple[CalendarEntry, ...], *, seed: int) -> dict[str, object]:
+    """Return event-byte provenance plus planted calendar truth."""
+    return {
+        "factory": "diurnix.synthetic-calendar",
+        "factory_version": 1,
+        "seed": seed,
+        "events": event_manifest(entries),
+        "ground_truth": calendar_ground_truth(entries),
     }
