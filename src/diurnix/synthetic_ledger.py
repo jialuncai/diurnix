@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from diurnix.events import Transaction
+from diurnix.events import AnomalyLabel, Transaction
 from diurnix.persona import Persona
 from diurnix.randomness import SeededRandom
 
@@ -36,4 +36,17 @@ def generate_ledger_month(
         )
         for day in range(days)
         for slot in range(2)
+    )
+
+
+def plant_duplicate(source: Transaction, seed: int) -> Transaction:
+    """Create a near-time duplicate retaining amount and merchant."""
+    return Transaction(
+        f"txn_duplicate_{seed}",
+        source.occurred_at + timedelta(minutes=3),
+        source.amount,
+        source.currency,
+        source.merchant,
+        source.category,
+        AnomalyLabel.DUPLICATE,
     )
