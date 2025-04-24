@@ -37,3 +37,13 @@ def test_outlier_multiplier_must_exceed_one() -> None:
     source = generate_transaction(create_persona(3), 7, 0, NOW)
     with pytest.raises(ValidationError, match="exceed one"):
         plant_outlier(source, 7, multiplier=1)
+
+
+def test_subscription_creep_has_monotonic_magnitude_and_labels() -> None:
+    from diurnix.synthetic_ledger import plant_subscription_creep
+
+    transactions = plant_subscription_creep(create_persona(3), 7, NOW)
+    magnitudes = [abs(item.amount) for item in transactions]
+    assert magnitudes == sorted(magnitudes)
+    assert transactions[0].planted_anomaly is AnomalyLabel.NONE
+    assert all(item.planted_anomaly is AnomalyLabel.SUBSCRIPTION_CREEP for item in transactions[1:])

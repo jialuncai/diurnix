@@ -67,3 +67,26 @@ def plant_outlier(source: Transaction, seed: int, *, multiplier: float = 8.0) ->
         source.category,
         AnomalyLabel.OUTLIER,
     )
+
+
+def plant_subscription_creep(
+    persona: Persona, seed: int, start: datetime, *, months: int = 4
+) -> tuple[Transaction, ...]:
+    """Generate a recurring subscription whose charge rises each month."""
+    merchant = next((item for item in persona.merchants if item.recurring), None)
+    if merchant is None:
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("persona has no recurring merchant")
+    return tuple(
+        Transaction(
+            f"txn_creep_{seed}_{month}",
+            start + timedelta(days=30 * month),
+            -round(merchant.typical_amount * (1 + 0.08 * month), 2),
+            "CNY",
+            merchant.name,
+            merchant.category,
+            AnomalyLabel.SUBSCRIPTION_CREEP if month else AnomalyLabel.NONE,
+        )
+        for month in range(months)
+    )
