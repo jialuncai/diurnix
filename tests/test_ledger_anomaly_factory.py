@@ -17,3 +17,23 @@ def test_duplicate_anomaly_matches_source_and_has_new_identity() -> None:
     assert duplicate.merchant == source.merchant
     assert duplicate.planted_anomaly is AnomalyLabel.DUPLICATE
     assert (duplicate.occurred_at - source.occurred_at).total_seconds() == 180
+
+
+def test_outlier_anomaly_scales_expense_magnitude() -> None:
+    from diurnix.synthetic_ledger import plant_outlier
+
+    source = generate_transaction(create_persona(3), 7, 0, NOW)
+    outlier = plant_outlier(source, 7, multiplier=10)
+    assert outlier.amount == round(source.amount * 10, 2)
+    assert outlier.planted_anomaly is AnomalyLabel.OUTLIER
+
+
+def test_outlier_multiplier_must_exceed_one() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.synthetic_ledger import plant_outlier
+
+    source = generate_transaction(create_persona(3), 7, 0, NOW)
+    with pytest.raises(ValidationError, match="exceed one"):
+        plant_outlier(source, 7, multiplier=1)

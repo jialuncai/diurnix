@@ -50,3 +50,20 @@ def plant_duplicate(source: Transaction, seed: int) -> Transaction:
         source.category,
         AnomalyLabel.DUPLICATE,
     )
+
+
+def plant_outlier(source: Transaction, seed: int, *, multiplier: float = 8.0) -> Transaction:
+    """Create a labeled expense multiple while preserving merchant context."""
+    if multiplier <= 1:
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("outlier multiplier must exceed one")
+    return Transaction(
+        f"txn_outlier_{seed}",
+        source.occurred_at,
+        round(source.amount * multiplier, 2),
+        source.currency,
+        source.merchant,
+        source.category,
+        AnomalyLabel.OUTLIER,
+    )
