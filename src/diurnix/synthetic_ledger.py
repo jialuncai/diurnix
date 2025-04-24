@@ -104,3 +104,19 @@ def plant_miscategorization(source: Transaction, seed: int) -> Transaction:
         wrong,
         AnomalyLabel.MISCATEGORIZED,
     )
+
+
+def generate_planted_ledger_month(
+    persona: Persona, seed: int, start: datetime
+) -> tuple[Transaction, ...]:
+    """Generate a month containing every documented planted anomaly family."""
+    base = list(generate_ledger_month(persona, seed, start))
+    base.extend(
+        (
+            plant_duplicate(base[3], seed),
+            plant_outlier(base[10], seed),
+            plant_miscategorization(base[20], seed),
+        )
+    )
+    base.extend(plant_subscription_creep(persona, seed, start))
+    return tuple(sorted(base, key=lambda item: (item.occurred_at, item.event_id)))
