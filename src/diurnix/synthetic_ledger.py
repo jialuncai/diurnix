@@ -90,3 +90,17 @@ def plant_subscription_creep(
         )
         for month in range(months)
     )
+
+
+def plant_miscategorization(source: Transaction, seed: int) -> Transaction:
+    """Copy a transaction with a known-wrong category."""
+    wrong = "transport" if source.category != "transport" else "groceries"
+    return Transaction(
+        f"txn_miscategorized_{seed}",
+        source.occurred_at,
+        source.amount,
+        source.currency,
+        source.merchant,
+        wrong,
+        AnomalyLabel.MISCATEGORIZED,
+    )
