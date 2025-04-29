@@ -120,3 +120,17 @@ def generate_planted_ledger_month(
     )
     base.extend(plant_subscription_creep(persona, seed, start))
     return tuple(sorted(base, key=lambda item: (item.occurred_at, item.event_id)))
+
+
+def ledger_ground_truth(transactions: tuple[Transaction, ...]) -> dict[str, object]:
+    """Return labeled anomaly IDs and class counts."""
+    anomaly_ids = {
+        item.event_id: item.planted_anomaly.value
+        for item in transactions
+        if item.planted_anomaly is not AnomalyLabel.NONE
+    }
+    return {
+        "transaction_count": len(transactions),
+        "anomaly_ids": anomaly_ids,
+        "anomaly_count": len(anomaly_ids),
+    }
