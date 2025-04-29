@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
+from diurnix.event_stream import event_manifest
 from diurnix.events import AnomalyLabel, Transaction
 from diurnix.persona import Persona
 from diurnix.randomness import SeededRandom
@@ -133,4 +134,15 @@ def ledger_ground_truth(transactions: tuple[Transaction, ...]) -> dict[str, obje
         "transaction_count": len(transactions),
         "anomaly_ids": anomaly_ids,
         "anomaly_count": len(anomaly_ids),
+    }
+
+
+def ledger_manifest(transactions: tuple[Transaction, ...], *, seed: int) -> dict[str, object]:
+    """Return checksummed event provenance and anomaly truth."""
+    return {
+        "factory": "diurnix.synthetic-ledger",
+        "factory_version": 1,
+        "seed": seed,
+        "events": event_manifest(transactions),
+        "ground_truth": ledger_ground_truth(transactions),
     }
