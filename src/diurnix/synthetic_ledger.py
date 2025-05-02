@@ -137,6 +137,14 @@ def ledger_ground_truth(transactions: tuple[Transaction, ...]) -> dict[str, obje
     }
 
 
+def anomaly_label_counts(transactions: tuple[Transaction, ...]) -> dict[str, int]:
+    """Count every planted anomaly class, including absent classes."""
+    return {
+        label.value: sum(item.planted_anomaly is label for item in transactions)
+        for label in AnomalyLabel
+    }
+
+
 def ledger_manifest(transactions: tuple[Transaction, ...], *, seed: int) -> dict[str, object]:
     """Return checksummed event provenance and anomaly truth."""
     return {

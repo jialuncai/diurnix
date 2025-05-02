@@ -20,3 +20,19 @@ def test_ledger_truth_excludes_ordinary_transactions() -> None:
     }
     assert truth["anomaly_ids"] == expected
     assert truth["anomaly_count"] == len(expected)
+
+
+def test_ledger_truth_counts_every_planted_class() -> None:
+    from diurnix.synthetic_ledger import anomaly_label_counts
+
+    transactions = generate_planted_ledger_month(create_persona(3), 7, START)
+    counts = anomaly_label_counts(transactions)
+    assert list(counts) == [label.value for label in AnomalyLabel]
+    assert sum(counts.values()) == len(transactions)
+    assert all(counts[label.value] > 0 for label in AnomalyLabel)
+
+
+def test_empty_ledger_truth_retains_zero_count_schema() -> None:
+    from diurnix.synthetic_ledger import anomaly_label_counts
+
+    assert anomaly_label_counts(()) == {label.value: 0 for label in AnomalyLabel}
