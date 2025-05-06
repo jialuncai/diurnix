@@ -45,3 +45,22 @@ def test_habit_stream_validates_duration() -> None:
     for days in (0, 367):
         with pytest.raises(ValidationError, match="one to 366"):
             generate_habit_stream(create_persona(3), 6, date(2026, 10, 1), days=days)
+
+
+def test_habit_stream_keeps_local_hour_across_fall_dst() -> None:
+    from diurnix.synthetic_habits import generate_habit_stream
+
+    persona = create_persona(4)
+    assert persona.timezone == "America/New_York"
+    events = generate_habit_stream(persona, 6, date(2026, 10, 30), days=5)
+    first_goal = persona.habit_goals[0]
+    selected = [item for item in events if item.habit == first_goal.name]
+    assert {item.occurred_at.hour for item in selected} == {first_goal.preferred_hour}
+    assert selected[0].occurred_at.utcoffset() != selected[-1].occurred_at.utcoffset()
+    assert [item.local_date for item in selected] == [
+        "2026-10-30",
+        "2026-10-31",
+        "2026-11-01",
+        "2026-11-02",
+        "2026-11-03",
+    ]
