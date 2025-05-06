@@ -96,3 +96,15 @@ def habit_ground_truth(events: tuple[HabitCheckIn, ...]) -> dict[str, object]:
             status.value: sum(item.status is status for item in events) for status in HabitStatus
         },
     }
+
+
+def planted_lapse_spans(events: tuple[HabitCheckIn, ...]) -> dict[str, tuple[str, str, int]]:
+    """Summarize consecutive planted lapse bounds by habit."""
+    result: dict[str, tuple[str, str, int]] = {}
+    habits = {item.habit for item in events if item.planted_lapse}
+    for habit in sorted(habits):
+        dates = sorted(
+            item.local_date for item in events if item.habit == habit and item.planted_lapse
+        )
+        result[habit] = (dates[0], dates[-1], len(dates))
+    return result

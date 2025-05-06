@@ -20,3 +20,14 @@ def test_habit_truth_identifies_exact_planted_lapses() -> None:
 
 def test_empty_habit_truth_retains_status_schema() -> None:
     assert habit_ground_truth(())["status_counts"] == {status.value: 0 for status in HabitStatus}
+
+
+def test_lapse_span_recovers_planted_bounds_and_length() -> None:
+    from diurnix.synthetic_habits import planted_lapse_spans
+
+    persona = create_persona(3)
+    events = generate_habit_stream(persona, 6, date(2026, 10, 1))
+    habit = persona.habit_goals[0].name
+    events = plant_habit_lapse(events, habit, date(2026, 10, 10), days=4)
+    assert planted_lapse_spans(events) == {habit: ("2026-10-10", "2026-10-13", 4)}
+    assert planted_lapse_spans(()) == {}
