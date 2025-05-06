@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, time
+from datetime import date, time, timedelta
 
 from diurnix.calendar import local_datetime
 from diurnix.events import HabitCheckIn, HabitStatus
@@ -26,3 +26,20 @@ def generate_habit_checkin(
         status,
         value=1.0 if completed else 0.0,
     )
+
+
+def generate_habit_stream(
+    persona: Persona, seed: int, start: date, *, days: int = 30
+) -> tuple[HabitCheckIn, ...]:
+    """Generate one check-in per persona goal per local day."""
+    from diurnix.errors import ValidationError
+
+    if not 1 <= days <= 366:
+        raise ValidationError("habit stream days must be from one to 366")
+    result = []
+    for offset in range(days):
+        day = start + timedelta(days=offset)
+        for goal_index, goal in enumerate(persona.habit_goals):
+            index = offset * len(persona.habit_goals) + goal_index
+            result.append(generate_habit_checkin(persona, goal, seed, index, day))
+    return tuple(result)
