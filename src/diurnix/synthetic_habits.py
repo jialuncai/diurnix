@@ -85,3 +85,14 @@ def mark_grace_skip(event: HabitCheckIn) -> HabitCheckIn:
         value=event.value,
         planted_lapse=False,
     )
+
+
+def habit_ground_truth(events: tuple[HabitCheckIn, ...]) -> dict[str, object]:
+    """Describe planted lapse identities and observed status counts."""
+    return {
+        "checkin_count": len(events),
+        "lapse_ids": [item.event_id for item in events if item.planted_lapse],
+        "status_counts": {
+            status.value: sum(item.status is status for item in events) for status in HabitStatus
+        },
+    }
