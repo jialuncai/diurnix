@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, time, timedelta
 
 from diurnix.calendar import local_datetime
+from diurnix.event_stream import event_manifest
 from diurnix.events import HabitCheckIn, HabitStatus
 from diurnix.persona import HabitGoal, Persona
 from diurnix.randomness import SeededRandom
@@ -108,3 +109,14 @@ def planted_lapse_spans(events: tuple[HabitCheckIn, ...]) -> dict[str, tuple[str
         )
         result[habit] = (dates[0], dates[-1], len(dates))
     return result
+
+
+def habit_manifest(events: tuple[HabitCheckIn, ...], *, seed: int) -> dict[str, object]:
+    """Return exact event-byte provenance and planted habit truth."""
+    return {
+        "factory": "diurnix.synthetic-habits",
+        "factory_version": 1,
+        "seed": seed,
+        "events": event_manifest(events),
+        "ground_truth": habit_ground_truth(events),
+    }
