@@ -68,3 +68,20 @@ def plant_habit_lapse(
             )
         result.append(item)
     return tuple(result)
+
+
+def mark_grace_skip(event: HabitCheckIn) -> HabitCheckIn:
+    """Convert an ordinary miss into an intentional grace-day skip."""
+    if event.status is not HabitStatus.MISSED or event.planted_lapse:
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("only ordinary missed check-ins can become grace skips")
+    return HabitCheckIn(
+        event.event_id,
+        event.occurred_at,
+        event.habit,
+        event.local_date,
+        HabitStatus.SKIPPED,
+        value=event.value,
+        planted_lapse=False,
+    )
