@@ -43,3 +43,28 @@ def generate_habit_stream(
             index = offset * len(persona.habit_goals) + goal_index
             result.append(generate_habit_checkin(persona, goal, seed, index, day))
     return tuple(result)
+
+
+def plant_habit_lapse(
+    events: tuple[HabitCheckIn, ...], habit: str, start: date, *, days: int = 3
+) -> tuple[HabitCheckIn, ...]:
+    """Replace a consecutive date range with labeled missed observations."""
+    if days < 1:
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("habit lapse days must be positive")
+    lapse_dates = {(start + timedelta(days=offset)).isoformat() for offset in range(days)}
+    result = []
+    for item in events:
+        if item.habit == habit and item.local_date in lapse_dates:
+            item = HabitCheckIn(
+                item.event_id,
+                item.occurred_at,
+                item.habit,
+                item.local_date,
+                HabitStatus.MISSED,
+                value=0.0,
+                planted_lapse=True,
+            )
+        result.append(item)
+    return tuple(result)
