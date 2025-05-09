@@ -80,3 +80,21 @@ def bundle_manifest(bundle: SyntheticBundle) -> dict[str, object]:
         "ground_truth_checksum": content_checksum(bundle.ground_truth),
         "ground_truth": bundle.ground_truth,
     }
+
+
+def audit_bundle(bundle: SyntheticBundle) -> tuple[str, ...]:
+    """Return deterministic completeness errors without mutating a bundle."""
+    errors = []
+    for name in ("inbox", "calendar", "ledger", "habits"):
+        if not getattr(bundle, name):
+            errors.append(f"{name} stream is empty")
+        if name not in bundle.ground_truth:
+            errors.append(f"{name} truth is missing")
+    identities = [
+        event.event_id
+        for stream in (bundle.inbox, bundle.calendar, bundle.ledger, bundle.habits)
+        for event in stream
+    ]
+    if len(set(identities)) != len(identities):
+        errors.append("event identities are not globally unique")
+    return tuple(errors)
