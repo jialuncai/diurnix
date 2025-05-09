@@ -64,3 +64,33 @@ def test_habit_stream_keeps_local_hour_across_fall_dst() -> None:
         "2026-11-02",
         "2026-11-03",
     ]
+
+
+def test_habit_factory_seed_snapshot() -> None:
+    from diurnix.synthetic_habits import generate_habit_stream
+
+    events = generate_habit_stream(create_persona(3), 6, date(2026, 10, 1), days=7)
+    assert [item.status.value for item in events] == [
+        "done",
+        "done",
+        "done",
+        "done",
+        "missed",
+        "done",
+        "missed",
+        "done",
+        "done",
+        "done",
+        "missed",
+        "done",
+        "missed",
+        "done",
+    ]
+
+
+def test_habit_factory_different_seed_changes_observation_pattern() -> None:
+    from diurnix.synthetic_habits import generate_habit_stream
+
+    first = generate_habit_stream(create_persona(3), 6, date(2026, 10, 1), days=20)
+    second = generate_habit_stream(create_persona(3), 7, date(2026, 10, 1), days=20)
+    assert [item.status for item in first] != [item.status for item in second]
