@@ -58,3 +58,25 @@ def generate_bundle(seed: int, start: datetime) -> SyntheticBundle:
         "habits": habit_ground_truth(habits),
     }
     return SyntheticBundle(seed, persona, inbox, calendar, ledger, habits, truth)
+
+
+def bundle_manifest(bundle: SyntheticBundle) -> dict[str, object]:
+    """Checksum each event stream and the complete planted truth mapping."""
+    from diurnix.event_stream import event_manifest
+    from diurnix.integrity import content_checksum
+    from diurnix.persona_codec import persona_to_dict
+
+    return {
+        "factory": "diurnix.synthetic-bundle",
+        "factory_version": 1,
+        "seed": bundle.seed,
+        "persona_checksum": content_checksum(persona_to_dict(bundle.persona)),
+        "streams": {
+            "inbox": event_manifest(bundle.inbox),
+            "calendar": event_manifest(bundle.calendar),
+            "ledger": event_manifest(bundle.ledger),
+            "habits": event_manifest(bundle.habits),
+        },
+        "ground_truth_checksum": content_checksum(bundle.ground_truth),
+        "ground_truth": bundle.ground_truth,
+    }
