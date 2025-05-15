@@ -32,3 +32,22 @@ def test_different_seed_bundle_changes_all_identity_streams() -> None:
         event.event_id for event in second.inbox
     )
     assert bundle_manifest(first) != bundle_manifest(second)
+
+
+def test_bundle_manifest_top_level_schema_is_exhaustive() -> None:
+    bundle = generate_bundle(3, datetime(2026, 10, 1, 8, tzinfo=UTC))
+    assert list(bundle_manifest(bundle)) == [
+        "factory",
+        "factory_version",
+        "seed",
+        "persona_checksum",
+        "streams",
+        "ground_truth_checksum",
+        "ground_truth",
+    ]
+
+
+def test_bundle_event_count_matches_manifest_counts() -> None:
+    bundle = generate_bundle(3, datetime(2026, 10, 1, 8, tzinfo=UTC))
+    manifest = bundle_manifest(bundle)
+    assert bundle.event_count == sum(item["count"] for item in manifest["streams"].values())
