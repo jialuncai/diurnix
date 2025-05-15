@@ -42,3 +42,44 @@ class ToolSpec:
             validate_identifier(capability, label="capability")
         if self.version < 1:
             raise ValidationError("tool version must be positive")
+
+
+def validate_arguments(spec: ToolSpec, arguments: dict[str, Any]) -> dict[str, Any]:
+    """Validate the supported JSON-schema object subset and return a copy."""
+    schema = spec.arguments
+    properties = schema.get("properties", {})
+    required = schema.get("required", [])
+    missing = [name for name in required if name not in arguments]
+    if missing:
+        raise ValidationError(
+            f"missing required arguments: {', '.join(missing)}", path="$.arguments"
+        )
+    unknown = sorted(set(arguments) - set(properties))
+    if unknown and schema.get("additionalProperties", False) is False:
+        raise ValidationError(f"unknown arguments: {', '.join(unknown)}", path="$.arguments")
+    result = dict(arguments)
+    for name, value in arguments.items():
+        property_schema = properties.get(name)
+        if property_schema is not None:
+            _validate_value(value, property_schema, path=f"$.arguments.{name}")
+    return result
+
+
+def _validate_value(value: Any, schema: dict[str, Any], *, path: str) -> None:
+    expected = schema.get("type")
+    types = {
+        "string": str,
+        "integer": int,
+        "number": (int, float),
+        "boolean": bool,
+        "array": list,
+        "object": dict,
+        "null": type(None),
+    }
+    target = types.get(expected)
+    if target is None:
+        raise ValidationError(f"unsupported schema type: {expected}", path=path)
+    if not isinstance(value, target) or (
+        expected in ("integer", "number") and isinstance(value, bool)
+    ):
+        raise ValidationError(f"expected {expected}", path=path)
