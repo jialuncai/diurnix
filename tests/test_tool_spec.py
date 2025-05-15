@@ -40,3 +40,13 @@ def test_tool_spec_requires_unique_portable_capabilities() -> None:
         spec(capabilities=("calendar.read", "calendar.read"))
     with pytest.raises(ValueError, match="capability"):
         spec(capabilities=("Calendar Read",))
+
+
+def test_tool_spec_requires_object_argument_root() -> None:
+    for schema in ({}, {"type": "array"}, {"type": "string"}):
+        with pytest.raises(ValidationError, match="object type"):
+            spec(arguments=schema)
+
+
+def test_side_effect_wire_values_are_exhaustive() -> None:
+    assert [item.value for item in SideEffect] == ["none", "local", "external", "money"]
