@@ -14,6 +14,8 @@ from diurnix.events import (
     Transaction,
     UserUtterance,
 )
+from diurnix.factory import SyntheticBundle, generate_bundle
+from diurnix.persona import Persona
 from diurnix.randomness import SeededRandom
 
 __all__ = [
@@ -24,8 +26,10 @@ __all__ = [
     "HabitCheckIn",
     "InboxMessage",
     "IntegrityError",
+    "Persona",
     "PersonalEvent",
     "SeededRandom",
+    "SyntheticBundle",
     "SyntheticClock",
     "TimerFire",
     "Transaction",
@@ -33,4 +37,5 @@ __all__ = [
     "UserUtterance",
     "ValidationError",
     "__version__",
+    "generate_bundle",
 ]

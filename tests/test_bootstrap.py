@@ -37,7 +37,9 @@ def test_foundation_public_api_is_explicit_and_importable() -> None:
         "InboxMessage",
         "IntegrityError",
         "PersonalEvent",
+        "Persona",
         "SeededRandom",
+        "SyntheticBundle",
         "SyntheticClock",
         "TimerFire",
         "Transaction",
@@ -45,6 +47,7 @@ def test_foundation_public_api_is_explicit_and_importable() -> None:
         "UserUtterance",
         "ValidationError",
         "__version__",
+        "generate_bundle",
     }
     assert set(diurnix.__all__) == expected
     for name in expected:
