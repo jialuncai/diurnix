@@ -83,3 +83,16 @@ def _validate_value(value: Any, schema: dict[str, Any], *, path: str) -> None:
         expected in ("integer", "number") and isinstance(value, bool)
     ):
         raise ValidationError(f"expected {expected}", path=path)
+
+    if "enum" in schema and value not in schema["enum"]:
+        raise ValidationError("value is not in enum", path=path)
+    if isinstance(value, str):
+        if len(value) < schema.get("minLength", 0):
+            raise ValidationError("string is shorter than minimum", path=path)
+        if "maxLength" in schema and len(value) > schema["maxLength"]:
+            raise ValidationError("string is longer than maximum", path=path)
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        if "minimum" in schema and value < schema["minimum"]:
+            raise ValidationError("number is below minimum", path=path)
+        if "maximum" in schema and value > schema["maximum"]:
+            raise ValidationError("number is above maximum", path=path)
