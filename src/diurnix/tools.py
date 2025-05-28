@@ -96,3 +96,20 @@ def _validate_value(value: Any, schema: dict[str, Any], *, path: str) -> None:
             raise ValidationError("number is below minimum", path=path)
         if "maximum" in schema and value > schema["maximum"]:
             raise ValidationError("number is above maximum", path=path)
+
+    if isinstance(value, list):
+        if len(value) < schema.get("minItems", 0):
+            raise ValidationError("array has too few items", path=path)
+        if "maxItems" in schema and len(value) > schema["maxItems"]:
+            raise ValidationError("array has too many items", path=path)
+        item_schema = schema.get("items")
+        if item_schema:
+            for index, item in enumerate(value):
+                _validate_value(item, item_schema, path=f"{path}[{index}]")
+    if isinstance(value, dict) and "properties" in schema:
+        nested = ToolSpec("nested", "Nested object.", schema, ("nested.read",))
+        try:
+            validate_arguments(nested, value)
+        except ValidationError as error:
+            nested_path = str(error.context.get("path", "$.arguments")).removeprefix("$.arguments")
+            raise ValidationError(error.message, path=path + nested_path) from error
