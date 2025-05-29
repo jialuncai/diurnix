@@ -36,3 +36,24 @@ def test_registry_export_contains_specs_but_not_callables() -> None:
             }
         ],
     }
+
+
+def test_registry_export_roundtrips_with_explicit_binding() -> None:
+    from diurnix.registry_codec import import_registry
+
+    exported = export_registry(sample_registry())
+    restored = import_registry(exported, {"mail.send": lambda arguments: arguments})
+    assert export_registry(restored) == exported
+
+
+def test_registry_import_requires_schema_and_binding() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.registry_codec import import_registry
+
+    exported = export_registry(sample_registry())
+    with pytest.raises(ValidationError, match="missing tool binding"):
+        import_registry(exported, {})
+    with pytest.raises(ValidationError, match="match schema"):
+        import_registry({**exported, "schema_version": 2}, {})

@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from diurnix.registry import ToolRegistry
+from diurnix.errors import ValidationError
+from diurnix.registry import ToolImplementation, ToolRegistry
+from diurnix.tools import SideEffect, ToolSpec
 
 
 def export_registry(registry: ToolRegistry) -> dict[str, Any]:
@@ -23,3 +25,38 @@ def export_registry(registry: ToolRegistry) -> dict[str, Any]:
             }
         )
     return {"schema_version": 1, "tools": tools}
+
+
+def import_registry(value: dict[str, Any], bindings: dict[str, ToolImplementation]) -> ToolRegistry:
+    """Import strict specs while requiring an explicit local callable per name."""
+    if set(value) != {"schema_version", "tools"} or value.get("schema_version") != 1:
+        raise ValidationError("registry export does not match schema")
+    registry = ToolRegistry()
+    try:
+        for item in value["tools"]:
+            if set(item) != {
+                "name",
+                "description",
+                "arguments",
+                "capabilities",
+                "side_effect",
+                "version",
+            }:
+                raise ValidationError("tool export fields do not match schema")
+            name = item["name"]
+            if name not in bindings:
+                raise ValidationError(f"missing tool binding: {name}")
+            registry.register(
+                ToolSpec(
+                    name,
+                    item["description"],
+                    item["arguments"],
+                    tuple(item["capabilities"]),
+                    SideEffect(item["side_effect"]),
+                    item["version"],
+                ),
+                bindings[name],
+            )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid registry export payload") from error
+    return registry
