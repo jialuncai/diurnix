@@ -37,3 +37,13 @@ def test_registry_unknown_lookup_is_total_or_precise() -> None:
     with pytest.raises(ValidationError, match="unknown tool") as captured:
         registry.require("missing")
     assert captured.value.context == {"path": "$.tool"}
+
+
+def test_registry_unregister_removes_spec_and_callable_together() -> None:
+    registry = ToolRegistry()
+    registry.register(SPEC, lambda arguments: [])
+    assert registry.unregister("task.list") is SPEC
+    assert registry.names() == ()
+    assert registry.get("task.list") is None
+    with pytest.raises(ValidationError, match="unknown tool"):
+        registry.unregister("task.list")

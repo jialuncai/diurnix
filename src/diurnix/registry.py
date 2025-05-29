@@ -41,3 +41,10 @@ class ToolRegistry:
     def names(self) -> tuple[str, ...]:
         """List registered names in lexical order."""
         return tuple(sorted(self._specs))
+
+    def unregister(self, name: str) -> ToolSpec:
+        """Remove one registered pair and return its previous spec."""
+        spec = self.require(name)
+        del self._specs[name]
+        del self._implementations[name]
+        return spec
