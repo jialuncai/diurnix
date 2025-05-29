@@ -48,3 +48,15 @@ class ToolRegistry:
         del self._specs[name]
         del self._implementations[name]
         return spec
+
+    def by_capability(self, capability: str, *, require_all: bool = False) -> tuple[ToolSpec, ...]:
+        """Query one capability or a comma-separated conjunction."""
+        requested = {item.strip() for item in capability.split(",") if item.strip()}
+        if not requested:
+            raise ValidationError("capability query must not be empty")
+        matches = []
+        for spec in self._specs.values():
+            available = set(spec.capabilities)
+            if requested <= available if require_all else bool(requested & available):
+                matches.append(spec)
+        return tuple(sorted(matches, key=lambda item: item.name))
