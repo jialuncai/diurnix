@@ -57,3 +57,24 @@ def test_registry_import_requires_schema_and_binding() -> None:
         import_registry(exported, {})
     with pytest.raises(ValidationError, match="match schema"):
         import_registry({**exported, "schema_version": 2}, {})
+
+
+def test_registry_export_has_stable_canonical_json() -> None:
+    from diurnix.codec import canonical_dumps
+
+    assert canonical_dumps(export_registry(sample_registry())) == (
+        '{"schema_version":1,"tools":[{"arguments":{"properties":{"text":{"type":"string"}},'
+        '"type":"object"},"capabilities":["mail.send"],"description":"Send synthetic mail.",'
+        '"name":"mail.send","side_effect":"external","version":2}]}'
+    )
+
+
+def test_registry_export_order_is_name_stable() -> None:
+    from diurnix.tools import ToolSpec
+
+    registry = sample_registry()
+    registry.register(
+        ToolSpec("alpha", "Alpha tool.", {"type": "object", "properties": {}}, ("alpha.read",)),
+        lambda arguments: None,
+    )
+    assert [item["name"] for item in export_registry(registry)["tools"]] == ["alpha", "mail.send"]
