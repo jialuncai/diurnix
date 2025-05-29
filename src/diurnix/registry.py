@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Any
 
 from diurnix.errors import ValidationError
-from diurnix.tools import ToolSpec
+from diurnix.tools import SideEffect, ToolSpec
 
 ToolImplementation = Callable[[dict[str, Any]], Any]
 
@@ -60,3 +60,13 @@ class ToolRegistry:
             if requested <= available if require_all else bool(requested & available):
                 matches.append(spec)
         return tuple(sorted(matches, key=lambda item: item.name))
+
+    def by_side_effect(self, *effects: SideEffect) -> tuple[ToolSpec, ...]:
+        """Return specs matching any requested effect class."""
+        accepted = set(effects)
+        return tuple(
+            sorted(
+                (spec for spec in self._specs.values() if spec.side_effect in accepted),
+                key=lambda item: item.name,
+            )
+        )
