@@ -6,7 +6,7 @@ from collections.abc import Callable
 from typing import Any
 
 from diurnix.errors import ValidationError
-from diurnix.tools import SideEffect, ToolSpec
+from diurnix.tools import SideEffect, ToolSpec, validate_arguments
 
 ToolImplementation = Callable[[dict[str, Any]], Any]
 
@@ -70,3 +70,9 @@ class ToolRegistry:
                 key=lambda item: item.name,
             )
         )
+
+    def invoke(self, name: str, arguments: dict[str, Any]) -> Any:
+        """Validate arguments before calling the bound implementation once."""
+        spec = self.require(name)
+        validated = validate_arguments(spec, arguments)
+        return self._implementations[name](validated)
