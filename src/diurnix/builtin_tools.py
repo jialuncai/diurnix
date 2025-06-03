@@ -59,3 +59,11 @@ def _advance_clock(clock: SyntheticClock, seconds: float) -> dict[str, Any]:
 
     due = clock.advance(timedelta(seconds=seconds))
     return {"now": clock.now().isoformat(), "due": [timer.name for timer in due]}
+
+
+def default_registry(clock: SyntheticClock) -> ToolRegistry:
+    """Build a fresh registry containing all foundation offline tools."""
+    registry = ToolRegistry()
+    register_loopback_tool(registry)
+    register_clock_tools(registry, clock)
+    return registry
