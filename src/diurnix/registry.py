@@ -76,3 +76,10 @@ class ToolRegistry:
         spec = self.require(name)
         validated = validate_arguments(spec, arguments)
         return self._implementations[name](validated)
+
+    def clone(self) -> ToolRegistry:
+        """Return an independent registry retaining immutable specs and callables."""
+        cloned = ToolRegistry()
+        for name in self.names():
+            cloned.register(self._specs[name], self._implementations[name])
+        return cloned
