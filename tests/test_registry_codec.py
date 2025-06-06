@@ -78,3 +78,27 @@ def test_registry_export_order_is_name_stable() -> None:
         lambda arguments: None,
     )
     assert [item["name"] for item in export_registry(registry)["tools"]] == ["alpha", "mail.send"]
+
+
+def test_registry_import_rejects_tool_field_drift() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.registry_codec import import_registry
+
+    exported = export_registry(sample_registry())
+    exported["tools"][0]["extra"] = True
+    with pytest.raises(ValidationError, match="fields do not match"):
+        import_registry(exported, {"mail.send": lambda arguments: None})
+
+
+def test_registry_import_wraps_invalid_side_effect() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.registry_codec import import_registry
+
+    exported = export_registry(sample_registry())
+    exported["tools"][0]["side_effect"] = "unknown"
+    with pytest.raises(ValidationError, match="invalid registry"):
+        import_registry(exported, {"mail.send": lambda arguments: None})
