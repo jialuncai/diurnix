@@ -73,3 +73,14 @@ def registry_manifest(registry: ToolRegistry) -> dict[str, Any]:
         "checksum": content_checksum(exported),
         "registry": exported,
     }
+
+
+def diff_registries(before: ToolRegistry, after: ToolRegistry) -> dict[str, tuple[str, ...]]:
+    """Report added, removed, and contract-changed tool names."""
+    old = {item["name"]: item for item in export_registry(before)["tools"]}
+    new = {item["name"]: item for item in export_registry(after)["tools"]}
+    return {
+        "added": tuple(sorted(set(new) - set(old))),
+        "removed": tuple(sorted(set(old) - set(new))),
+        "changed": tuple(sorted(name for name in set(old) & set(new) if old[name] != new[name])),
+    }
