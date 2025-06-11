@@ -37,3 +37,16 @@ def test_tool_result_decoder_validates_version_and_identity() -> None:
         tool_result_from_dict({**valid, "schema_version": 2})
     with pytest.raises(ValueError, match="call_id"):
         tool_result_from_dict({**valid, "call_id": "Bad ID"})
+
+
+def test_tool_call_has_stable_checksum_for_key_order() -> None:
+    from diurnix.integrity import content_checksum
+
+    left = tool_call_to_dict(ToolCall("call_1", "mail.send", {"b": 2, "a": 1}))
+    right = tool_call_to_dict(ToolCall("call_1", "mail.send", {"a": 1, "b": 2}))
+    assert content_checksum(left) == content_checksum(right)
+
+
+def test_tool_call_golden_mapping_shape_is_exhaustive() -> None:
+    encoded = tool_call_to_dict(ToolCall("call_1", "mail.send", {"text": "hello"}))
+    assert list(encoded) == ["schema_version", "call_id", "tool", "arguments"]
