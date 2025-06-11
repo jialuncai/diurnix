@@ -17,6 +17,9 @@ from diurnix.events import (
 from diurnix.factory import SyntheticBundle, generate_bundle
 from diurnix.persona import Persona
 from diurnix.randomness import SeededRandom
+from diurnix.registry import ToolRegistry
+from diurnix.tool_calls import ToolCall, ToolResult
+from diurnix.tools import SideEffect, ToolSpec
 
 __all__ = [
     "ArtifactEnvelope",
@@ -29,9 +32,14 @@ __all__ = [
     "Persona",
     "PersonalEvent",
     "SeededRandom",
+    "SideEffect",
     "SyntheticBundle",
     "SyntheticClock",
     "TimerFire",
+    "ToolCall",
+    "ToolRegistry",
+    "ToolResult",
+    "ToolSpec",
     "Transaction",
     "Usage",
     "UserUtterance",
