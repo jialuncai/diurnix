@@ -20,3 +20,20 @@ def test_tool_call_mapping_rejects_schema_drift() -> None:
         tool_call_from_dict({**valid, "extra": True})
     with pytest.raises(ValidationError, match="invalid"):
         tool_call_from_dict({**valid, "schema_version": 2})
+
+
+def test_tool_result_mapping_roundtrips_nested_output() -> None:
+    from diurnix.tool_calls import ToolResult, tool_result_from_dict, tool_result_to_dict
+
+    result = ToolResult("call_1", "mail.send", {"sent": True, "ids": [1, 2]})
+    assert tool_result_from_dict(tool_result_to_dict(result)) == result
+
+
+def test_tool_result_decoder_validates_version_and_identity() -> None:
+    from diurnix.tool_calls import ToolResult, tool_result_from_dict, tool_result_to_dict
+
+    valid = tool_result_to_dict(ToolResult("call_1", "mail.send", None))
+    with pytest.raises(ValidationError, match="unsupported"):
+        tool_result_from_dict({**valid, "schema_version": 2})
+    with pytest.raises(ValueError, match="call_id"):
+        tool_result_from_dict({**valid, "call_id": "Bad ID"})

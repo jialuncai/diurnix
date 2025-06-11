@@ -51,3 +51,26 @@ def tool_call_from_dict(value: dict[str, Any]) -> ToolCall:
     if value["schema_version"] != 1 or not isinstance(value["arguments"], dict):
         raise ValidationError("invalid tool call payload")
     return ToolCall(value["call_id"], value["tool"], dict(value["arguments"]))
+
+
+def tool_result_to_dict(result: ToolResult) -> dict[str, Any]:
+    """Encode a correlated tool result without coercing its output."""
+    return {
+        "schema_version": 1,
+        "call_id": result.call_id,
+        "tool": result.tool,
+        "output": result.output,
+    }
+
+
+def tool_result_from_dict(value: dict[str, Any]) -> ToolResult:
+    """Decode a strict current-version tool result."""
+    from diurnix.errors import ValidationError
+
+    if set(value) != {"schema_version", "call_id", "tool", "output"}:
+        raise ValidationError("tool result fields do not match schema")
+    if value["schema_version"] != 1:
+        raise ValidationError("unsupported tool result schema")
+    validate_identifier(value["call_id"], label="call_id")
+    validate_identifier(value["tool"], label="tool")
+    return ToolResult(value["call_id"], value["tool"], value["output"])
