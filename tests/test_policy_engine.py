@@ -35,3 +35,29 @@ def test_policy_engine_rejects_duplicate_rule_identity() -> None:
     rule = PolicyRule("same", PolicyEffect.ALLOW, "same")
     with pytest.raises(ValidationError, match="unique"):
         PolicyEngine((rule, rule))
+
+
+def test_higher_priority_rule_wins_regardless_of_effect() -> None:
+    engine = PolicyEngine(
+        (
+            PolicyRule("low_deny", PolicyEffect.DENY, "low", priority=1),
+            PolicyRule("high_allow", PolicyEffect.ALLOW, "high", priority=2),
+        )
+    )
+    assert engine.decide(ACTION).rule_id == "high_allow"
+
+
+def test_equal_priority_prefers_deny_then_ask_then_allow() -> None:
+    rules = (
+        PolicyRule("allow", PolicyEffect.ALLOW, "allow", priority=5),
+        PolicyRule("ask", PolicyEffect.ASK, "ask", priority=5),
+        PolicyRule("deny", PolicyEffect.DENY, "deny", priority=5),
+    )
+    assert PolicyEngine(rules).decide(ACTION).rule_id == "deny"
+    assert PolicyEngine(rules[:2]).decide(ACTION).rule_id == "ask"
+
+
+def test_policy_decision_copies_action_arguments() -> None:
+    decision = PolicyEngine((), default_effect=PolicyEffect.ALLOW).decide(ACTION)
+    decision.redacted_arguments["to"] = "changed"
+    assert ACTION.arguments == {"to": "a@example.test"}
