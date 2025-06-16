@@ -65,3 +65,30 @@ class PolicyRule:
             set(self.capabilities) & set(action.capabilities)
         )
         return tool_match and capability_match
+
+
+class PolicyEngine:
+    """Deterministic rule evaluator with an explicit default effect."""
+
+    def __init__(
+        self, rules: tuple[PolicyRule, ...], *, default_effect: PolicyEffect = PolicyEffect.DENY
+    ) -> None:
+        if len({rule.rule_id for rule in rules}) != len(rules):
+            raise ValidationError("policy rule IDs must be unique")
+        self.rules = rules
+        self.default_effect = default_effect
+
+    def decide(self, action: PolicyAction) -> PolicyDecision:
+        """Return the highest-precedence matching decision."""
+        matches = [rule for rule in self.rules if rule.matches(action)]
+        if not matches:
+            return PolicyDecision(
+                self.default_effect, "default", "no policy rule matched", dict(action.arguments)
+            )
+        severity = {PolicyEffect.ALLOW: 0, PolicyEffect.ASK: 1, PolicyEffect.DENY: 2}
+        selected = max(
+            matches, key=lambda rule: (rule.priority, severity[rule.effect], rule.rule_id)
+        )
+        return PolicyDecision(
+            selected.effect, selected.rule_id, selected.reason, dict(action.arguments)
+        )
