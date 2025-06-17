@@ -17,3 +17,20 @@ def test_pii_detector_finds_email_phone_and_card_in_order() -> None:
 def test_pii_detector_ignores_short_numbers_and_broken_addresses() -> None:
     assert find_pii("code 12345; user at example dot test") == ()
     assert [item.kind for item in find_pii("prefix-a@example.test-suffix")] == []
+
+
+def test_email_redaction_removes_original_address() -> None:
+    from diurnix.redaction import redact_text
+
+    original = "Send to First.Last+tag@example.test now."
+    redacted = redact_text(original, kinds=("email",))
+    assert redacted == "Send to [EMAIL] now."
+    assert "First.Last" not in redacted
+    assert "example.test" not in redacted
+
+
+def test_email_redaction_can_leave_other_kinds_untouched() -> None:
+    from diurnix.redaction import redact_text
+
+    text = "a@example.test +86 138 0013 8000"
+    assert redact_text(text, kinds=("email",)) == "[EMAIL] +86 138 0013 8000"

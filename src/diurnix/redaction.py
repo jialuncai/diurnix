@@ -32,3 +32,18 @@ def find_pii(text: str) -> tuple[PiiMatch, ...]:
         if not result or item.start >= result[-1].end:
             result.append(item)
     return tuple(result)
+
+
+def redact_text(text: str, *, kinds: tuple[str, ...] = ("email", "phone", "card")) -> str:
+    """Replace selected PII candidates with stable typed placeholders."""
+    accepted = set(kinds)
+    pieces = []
+    cursor = 0
+    for match in find_pii(text):
+        if match.kind not in accepted:
+            continue
+        pieces.append(text[cursor : match.start])
+        pieces.append(f"[{match.kind.upper()}]")
+        cursor = match.end
+    pieces.append(text[cursor:])
+    return "".join(pieces)
