@@ -67,3 +67,29 @@ class OutsideTimeWindowRule(PolicyRule):
             return False
         local = action.occurred_at.astimezone(ZoneInfo(self.timezone)).time().replace(tzinfo=None)
         return not self.starts_at <= local < self.ends_at
+
+
+@dataclass(frozen=True, slots=True)
+class RecipientAllowlistRule(PolicyRule):
+    """Match if any recipient is outside an exact case-insensitive allowlist."""
+
+    allowed: tuple[str, ...] = ()
+    recipient_field: str = "recipients"
+
+    def __post_init__(self) -> None:
+        PolicyRule.__post_init__(self)
+        if not self.allowed:
+            raise ValidationError("recipient allowlist must not be empty")
+
+    def matches(self, action: PolicyAction) -> bool:
+        if not PolicyRule.matches(self, action):
+            return False
+        recipients = action.arguments.get(self.recipient_field, [])
+        if isinstance(recipients, str):
+            recipients = [recipients]
+        if not isinstance(recipients, list):
+            return True
+        allowed = {item.casefold() for item in self.allowed}
+        return any(
+            not isinstance(item, str) or item.casefold() not in allowed for item in recipients
+        )
