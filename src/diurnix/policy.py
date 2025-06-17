@@ -8,6 +8,7 @@ from enum import StrEnum
 from typing import Any
 
 from diurnix.errors import ValidationError
+from diurnix.redaction import redact_value
 from diurnix.tools import SideEffect
 
 
@@ -83,12 +84,15 @@ class PolicyEngine:
         matches = [rule for rule in self.rules if rule.matches(action)]
         if not matches:
             return PolicyDecision(
-                self.default_effect, "default", "no policy rule matched", dict(action.arguments)
+                self.default_effect,
+                "default",
+                "no policy rule matched",
+                redact_value(action.arguments),
             )
         severity = {PolicyEffect.ALLOW: 0, PolicyEffect.ASK: 1, PolicyEffect.DENY: 2}
         selected = max(
             matches, key=lambda rule: (rule.priority, severity[rule.effect], rule.rule_id)
         )
         return PolicyDecision(
-            selected.effect, selected.rule_id, selected.reason, dict(action.arguments)
+            selected.effect, selected.rule_id, selected.reason, redact_value(action.arguments)
         )
