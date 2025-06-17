@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 _EMAIL = re.compile(r"(?<![\w.+-])[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}(?![\w.-])")
 _PHONE = re.compile(r"(?<!\d)(?:\+?\d[\d -]{8,}\d)(?!\d)")
@@ -47,3 +48,27 @@ def redact_text(text: str, *, kinds: tuple[str, ...] = ("email", "phone", "card"
         cursor = match.end
     pieces.append(text[cursor:])
     return "".join(pieces)
+
+
+def redact_value(value: Any) -> Any:
+    """Recursively redact string leaves while preserving JSON container shapes."""
+    if isinstance(value, str):
+        return redact_text(value)
+    if isinstance(value, dict):
+        return {key: redact_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [redact_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(redact_value(item) for item in value)
+    return value
+
+
+def contains_pii(value: Any) -> bool:
+    """Return whether any nested string leaf contains a detected candidate."""
+    if isinstance(value, str):
+        return bool(find_pii(value))
+    if isinstance(value, dict):
+        return any(contains_pii(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(contains_pii(item) for item in value)
+    return False
