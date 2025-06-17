@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import time
+from zoneinfo import ZoneInfo
 
 from diurnix.errors import ValidationError
 from diurnix.policy import PolicyAction, PolicyEffect, PolicyRule
@@ -41,3 +43,27 @@ def money_approval(threshold: float) -> MoneyThresholdRule:
         capabilities=("money.write",),
         threshold=threshold,
     )
+
+
+@dataclass(frozen=True, slots=True)
+class OutsideTimeWindowRule(PolicyRule):
+    """Match actions outside a local half-open allowed window."""
+
+    starts_at: time = time(9)
+    ends_at: time = time(18)
+    timezone: str = "UTC"
+
+    def __post_init__(self) -> None:
+        PolicyRule.__post_init__(self)
+        if self.starts_at >= self.ends_at:
+            raise ValidationError("policy time window must be positive")
+        try:
+            ZoneInfo(self.timezone)
+        except Exception as error:
+            raise ValidationError("policy timezone is invalid") from error
+
+    def matches(self, action: PolicyAction) -> bool:
+        if not PolicyRule.matches(self, action):
+            return False
+        local = action.occurred_at.astimezone(ZoneInfo(self.timezone)).time().replace(tzinfo=None)
+        return not self.starts_at <= local < self.ends_at
