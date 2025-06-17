@@ -34,3 +34,20 @@ def test_email_redaction_can_leave_other_kinds_untouched() -> None:
 
     text = "a@example.test +86 138 0013 8000"
     assert redact_text(text, kinds=("email",)) == "[EMAIL] +86 138 0013 8000"
+
+
+def test_phone_and_card_redaction_removes_all_digits() -> None:
+    from diurnix.redaction import redact_text
+
+    text = "call +86 138 0013 8000 charge 4111-1111-1111-1111"
+    redacted = redact_text(text)
+    assert redacted == "call [PHONE] charge [CARD]"
+    assert not any(character.isdigit() for character in redacted)
+
+
+def test_repeated_pii_gets_one_placeholder_per_occurrence() -> None:
+    from diurnix.redaction import redact_text
+
+    text = "a@example.test then a@example.test"
+    assert redact_text(text).count("[EMAIL]") == 2
+    assert "a@example.test" not in redact_text(text)
