@@ -40,3 +40,10 @@ class RateLimitTracker:
         while history and history[0] <= cutoff:
             history.popleft()
         return history
+
+
+def rate_limit_decision(tracker: RateLimitTracker, key: str, now: datetime) -> tuple[bool, str]:
+    """Return a policy-friendly allow flag and deterministic reason."""
+    if tracker.allows(key, now):
+        return True, "rate capacity available"
+    return False, f"rate limit exceeded for {key}"
