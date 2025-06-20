@@ -7,7 +7,7 @@ from datetime import time
 from zoneinfo import ZoneInfo
 
 from diurnix.errors import ValidationError
-from diurnix.policy import PolicyAction, PolicyEffect, PolicyRule
+from diurnix.policy import PolicyAction, PolicyEffect, PolicyEngine, PolicyRule
 
 
 @dataclass(frozen=True, slots=True)
@@ -93,3 +93,33 @@ class RecipientAllowlistRule(PolicyRule):
         return any(
             not isinstance(item, str) or item.casefold() not in allowed for item in recipients
         )
+
+
+def default_personal_policy(allowed_recipients: tuple[str, ...]) -> PolicyEngine:
+    """Build conservative offline defaults for reads, writes, money, and recipients."""
+    rules: tuple[PolicyRule, ...] = (
+        RecipientAllowlistRule(
+            "recipient_deny",
+            PolicyEffect.DENY,
+            "recipient is not allowlisted",
+            priority=100,
+            capabilities=("mail.send",),
+            allowed=allowed_recipients,
+        ),
+        money_approval(100.0),
+        PolicyRule(
+            "external_approval",
+            PolicyEffect.ASK,
+            "external side effect needs approval",
+            priority=10,
+            capabilities=("mail.send", "calendar.write", "money.write"),
+        ),
+        PolicyRule(
+            "read_allow",
+            PolicyEffect.ALLOW,
+            "read-only capability",
+            priority=1,
+            capabilities=("clock.read", "calendar.read", "task.read", "ledger.read", "habit.read"),
+        ),
+    )
+    return PolicyEngine(rules, default_effect=PolicyEffect.DENY)
