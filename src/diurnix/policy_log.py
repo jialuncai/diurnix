@@ -43,3 +43,22 @@ def decision_metrics(log: DecisionLog) -> dict[str, object]:
     for record in log.records:
         rules[record.decision.rule_id] = rules.get(record.decision.rule_id, 0) + 1
     return {"decision_count": len(log.records), "effects": effects, "rules": rules}
+
+
+def decision_log_to_dict(log: DecisionLog) -> dict[str, object]:
+    """Encode the complete immutable audit trail."""
+    return {
+        "schema_version": 1,
+        "records": [
+            {
+                "sequence": record.sequence,
+                "occurred_at": record.occurred_at.isoformat(),
+                "action_tool": record.action_tool,
+                "effect": record.decision.effect.value,
+                "rule_id": record.decision.rule_id,
+                "reason": record.decision.reason,
+                "redacted_arguments": record.decision.redacted_arguments,
+            }
+            for record in log.records
+        ],
+    }
