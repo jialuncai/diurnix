@@ -29,3 +29,17 @@ class DecisionLog:
             raise ValidationError("decision time must be timezone-aware")
         record = DecisionRecord(len(self.records), occurred_at, action_tool, decision)
         return DecisionLog((*self.records, record))
+
+
+def decision_metrics(log: DecisionLog) -> dict[str, object]:
+    """Count effects and rules without omitting zero-count effects."""
+    from diurnix.policy import PolicyEffect
+
+    effects = {
+        effect.value: sum(record.decision.effect is effect for record in log.records)
+        for effect in PolicyEffect
+    }
+    rules: dict[str, int] = {}
+    for record in log.records:
+        rules[record.decision.rule_id] = rules.get(record.decision.rule_id, 0) + 1
+    return {"decision_count": len(log.records), "effects": effects, "rules": rules}
