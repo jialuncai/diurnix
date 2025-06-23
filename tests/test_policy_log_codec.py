@@ -21,3 +21,23 @@ def test_empty_decision_log_has_stable_golden_json() -> None:
     assert canonical_dumps(decision_log_to_dict(DecisionLog())) == (
         '{"records":[],"schema_version":1}'
     )
+
+
+def test_policy_decision_record_schema_is_exhaustive() -> None:
+    decision = PolicyDecision(PolicyEffect.DENY, "deny", "blocked", {"to": "[EMAIL]"})
+    log = DecisionLog().append(datetime(2026, 10, 30, 8, tzinfo=UTC), "mail.send", decision)
+    encoded = decision_log_to_dict(log)
+    assert list(encoded) == ["schema_version", "records"]
+    assert list(encoded["records"][0]) == [
+        "sequence",
+        "occurred_at",
+        "action_tool",
+        "effect",
+        "rule_id",
+        "reason",
+        "redacted_arguments",
+    ]
+
+
+def test_policy_effect_public_wire_order_is_stable() -> None:
+    assert [effect.value for effect in PolicyEffect] == ["allow", "ask", "deny"]
