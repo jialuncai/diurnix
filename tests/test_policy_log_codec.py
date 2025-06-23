@@ -43,6 +43,34 @@ def test_decision_log_decoder_rejects_schema_drift() -> None:
         decision_log_from_dict({"schema_version": 1, "records": {}})
 
 
+def test_decision_log_decoder_rejects_sequence_gaps() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.policy_log import decision_log_from_dict
+
+    decision = PolicyDecision(PolicyEffect.DENY, "deny", "blocked", {})
+    log = DecisionLog().append(datetime(2026, 10, 30, 8, tzinfo=UTC), "mail.send", decision)
+    encoded = decision_log_to_dict(log)
+    encoded["records"][0]["sequence"] = 2
+    with pytest.raises(ValidationError, match="contiguous"):
+        decision_log_from_dict(encoded)
+
+
+def test_decision_log_decoder_rejects_unredacted_pii() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.policy_log import decision_log_from_dict
+
+    decision = PolicyDecision(PolicyEffect.DENY, "deny", "blocked", {"to": "[EMAIL]"})
+    log = DecisionLog().append(datetime(2026, 10, 30, 8, tzinfo=UTC), "mail.send", decision)
+    encoded = decision_log_to_dict(log)
+    encoded["records"][0]["redacted_arguments"] = {"to": "person@example.test"}
+    with pytest.raises(ValidationError, match="unredacted PII"):
+        decision_log_from_dict(encoded)
+
+
 def test_policy_decision_record_schema_is_exhaustive() -> None:
     decision = PolicyDecision(PolicyEffect.DENY, "deny", "blocked", {"to": "[EMAIL]"})
     log = DecisionLog().append(datetime(2026, 10, 30, 8, tzinfo=UTC), "mail.send", decision)

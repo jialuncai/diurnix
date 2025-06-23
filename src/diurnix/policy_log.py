@@ -67,6 +67,7 @@ def decision_log_to_dict(log: DecisionLog) -> dict[str, object]:
 def decision_log_from_dict(value: dict[str, object]) -> DecisionLog:
     """Decode a strict current-version decision log."""
     from diurnix.policy import PolicyDecision, PolicyEffect
+    from diurnix.redaction import contains_pii
 
     if set(value) != {"schema_version", "records"} or value.get("schema_version") != 1:
         raise ValidationError("decision log does not match schema")
@@ -88,6 +89,8 @@ def decision_log_from_dict(value: dict[str, object]) -> DecisionLog:
                 raise ValidationError("decision record fields do not match schema")
             if item["sequence"] != expected_sequence:
                 raise ValidationError("decision sequences must be contiguous")
+            if contains_pii(item["redacted_arguments"]):
+                raise ValidationError("decision log contains unredacted PII")
             decision = PolicyDecision(
                 PolicyEffect(item["effect"]),
                 item["rule_id"],
