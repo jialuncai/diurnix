@@ -36,3 +36,31 @@ def test_random_unknown_capabilities_never_pass_default_deny() -> None:
             datetime(2026, 10, 30, 8, tzinfo=UTC),
         )
         assert engine.decide(action).effect is PolicyEffect.DENY
+
+
+def test_deny_rule_wins_when_action_also_matches_approval() -> None:
+    engine = default_personal_policy(("safe@example.test",))
+    action = PolicyAction(
+        "mail.send",
+        ("mail.send", "money.write"),
+        SideEffect.MONEY,
+        {"recipients": ["unsafe@example.test"], "amount": 1000},
+        datetime(2026, 10, 30, 8, tzinfo=UTC),
+    )
+    decision = engine.decide(action)
+    assert decision.effect is PolicyEffect.DENY
+    assert decision.rule_id == "recipient_deny"
+
+
+def test_default_policy_money_boundary_still_requires_approval() -> None:
+    engine = default_personal_policy(("safe@example.test",))
+    action = PolicyAction(
+        "ledger.pay",
+        ("money.write",),
+        SideEffect.MONEY,
+        {"amount": 100},
+        datetime(2026, 10, 30, 8, tzinfo=UTC),
+    )
+    decision = engine.decide(action)
+    assert decision.effect is PolicyEffect.ASK
+    assert decision.rule_id == "money_approval"
