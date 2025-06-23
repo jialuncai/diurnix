@@ -62,3 +62,41 @@ def decision_log_to_dict(log: DecisionLog) -> dict[str, object]:
             for record in log.records
         ],
     }
+
+
+def decision_log_from_dict(value: dict[str, object]) -> DecisionLog:
+    """Decode a strict current-version decision log."""
+    from diurnix.policy import PolicyDecision, PolicyEffect
+
+    if set(value) != {"schema_version", "records"} or value.get("schema_version") != 1:
+        raise ValidationError("decision log does not match schema")
+    records = value.get("records")
+    if not isinstance(records, list):
+        raise ValidationError("decision records must be an array")
+    log = DecisionLog()
+    try:
+        for expected_sequence, item in enumerate(records):
+            if set(item) != {
+                "sequence",
+                "occurred_at",
+                "action_tool",
+                "effect",
+                "rule_id",
+                "reason",
+                "redacted_arguments",
+            }:
+                raise ValidationError("decision record fields do not match schema")
+            if item["sequence"] != expected_sequence:
+                raise ValidationError("decision sequences must be contiguous")
+            decision = PolicyDecision(
+                PolicyEffect(item["effect"]),
+                item["rule_id"],
+                item["reason"],
+                dict(item["redacted_arguments"]),
+            )
+            log = log.append(
+                datetime.fromisoformat(item["occurred_at"]), item["action_tool"], decision
+            )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid decision log payload") from error
+    return log
