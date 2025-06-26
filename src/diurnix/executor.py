@@ -42,3 +42,26 @@ class ExecutionReceipt:
             raise ValidationError("receipt finish precedes start")
         if self.attempts < 0:
             raise ValidationError("receipt attempts cannot be negative")
+
+
+def receipt_to_dict(receipt: ExecutionReceipt) -> dict[str, Any]:
+    """Encode a receipt into its current versioned schema."""
+    return {
+        "schema_version": 1,
+        "receipt_id": receipt.receipt_id,
+        "call_id": receipt.call_id,
+        "tool": receipt.tool,
+        "status": receipt.status.value,
+        "started_at": receipt.started_at.isoformat(),
+        "finished_at": receipt.finished_at.isoformat(),
+        "attempts": receipt.attempts,
+        "decision": {
+            "effect": receipt.decision.effect.value,
+            "rule_id": receipt.decision.rule_id,
+            "reason": receipt.decision.reason,
+            "redacted_arguments": receipt.decision.redacted_arguments,
+        },
+        "output": receipt.output,
+        "error": receipt.error,
+        "idempotency_key": receipt.idempotency_key,
+    }
