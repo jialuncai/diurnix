@@ -7,7 +7,10 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-from diurnix.policy import PolicyDecision
+from diurnix.identifiers import stable_identifier
+from diurnix.policy import PolicyAction, PolicyDecision, PolicyEffect, PolicyEngine
+from diurnix.registry import ToolRegistry
+from diurnix.tool_calls import ToolCall
 
 
 class ExecutionStatus(StrEnum):
@@ -65,3 +68,40 @@ def receipt_to_dict(receipt: ExecutionReceipt) -> dict[str, Any]:
         "error": receipt.error,
         "idempotency_key": receipt.idempotency_key,
     }
+
+
+class Executor:
+    """Invoke registry tools only after a policy decision."""
+
+    def __init__(self, registry: ToolRegistry, policy: PolicyEngine) -> None:
+        self.registry = registry
+        self.policy = policy
+
+    def execute(self, call: ToolCall, now: datetime) -> ExecutionReceipt:
+        """Evaluate policy and return a receipt for every outcome."""
+        spec = self.registry.require(call.tool)
+        action = PolicyAction(call.tool, spec.capabilities, spec.side_effect, call.arguments, now)
+        decision = self.policy.decide(action)
+        receipt_id = stable_identifier(
+            "receipt", {"call_id": call.call_id, "tool": call.tool, "time": now.isoformat()}
+        )
+        if decision.effect is PolicyEffect.DENY:
+            return ExecutionReceipt(
+                receipt_id, call.call_id, call.tool, ExecutionStatus.DENIED, now, now, 0, decision
+            )
+        if decision.effect is PolicyEffect.ASK:
+            return ExecutionReceipt(
+                receipt_id, call.call_id, call.tool, ExecutionStatus.PENDING, now, now, 0, decision
+            )
+        output = self.registry.invoke(call.tool, call.arguments)
+        return ExecutionReceipt(
+            receipt_id,
+            call.call_id,
+            call.tool,
+            ExecutionStatus.SUCCEEDED,
+            now,
+            now,
+            1,
+            decision,
+            output=output,
+        )
