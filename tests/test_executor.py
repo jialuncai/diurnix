@@ -57,3 +57,15 @@ def test_seeded_denied_call_sequence_has_zero_invocations() -> None:
         receipt = executor.execute(ToolCall(f"call_{index}", "math.double", {"value": index}), NOW)
         assert receipt.status is ExecutionStatus.DENIED
     assert calls == []
+
+
+def test_executor_returns_pending_without_invocation_for_ask() -> None:
+    calls: list[dict[str, object]] = []
+    policy = PolicyEngine((PolicyRule("ask", PolicyEffect.ASK, "approval needed"),))
+    receipt = Executor(registry(calls), policy).execute(
+        ToolCall("call_1", "math.double", {"value": 4}), NOW
+    )
+    assert receipt.status is ExecutionStatus.PENDING
+    assert receipt.decision.rule_id == "ask"
+    assert receipt.attempts == 0
+    assert calls == []
