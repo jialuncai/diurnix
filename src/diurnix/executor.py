@@ -113,9 +113,18 @@ class Executor:
             return ExecutionReceipt(
                 receipt_id, call.call_id, call.tool, ExecutionStatus.PENDING, now, now, 0, decision
             )
-        try:
-            output = self.registry.invoke(call.tool, call.arguments)
-        except Exception as error:
+        output: Any = None
+        error: Exception | None = None
+        attempts = 0
+        for attempt in range(1, self.retry.max_attempts + 1):
+            attempts = attempt
+            try:
+                output = self.registry.invoke(call.tool, call.arguments)
+                error = None
+                break
+            except Exception as caught:
+                error = caught
+        if error is not None:
             return ExecutionReceipt(
                 receipt_id,
                 call.call_id,
@@ -123,7 +132,7 @@ class Executor:
                 ExecutionStatus.FAILED,
                 now,
                 now,
-                1,
+                attempts,
                 decision,
                 error=f"{type(error).__name__}: {error}",
             )
@@ -134,7 +143,7 @@ class Executor:
             ExecutionStatus.SUCCEEDED,
             now,
             now,
-            1,
+            attempts,
             decision,
             output=output,
         )
