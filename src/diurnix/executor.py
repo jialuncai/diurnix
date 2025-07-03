@@ -93,7 +93,20 @@ class Executor:
             return ExecutionReceipt(
                 receipt_id, call.call_id, call.tool, ExecutionStatus.PENDING, now, now, 0, decision
             )
-        output = self.registry.invoke(call.tool, call.arguments)
+        try:
+            output = self.registry.invoke(call.tool, call.arguments)
+        except Exception as error:
+            return ExecutionReceipt(
+                receipt_id,
+                call.call_id,
+                call.tool,
+                ExecutionStatus.FAILED,
+                now,
+                now,
+                1,
+                decision,
+                error=f"{type(error).__name__}: {error}",
+            )
         return ExecutionReceipt(
             receipt_id,
             call.call_id,
