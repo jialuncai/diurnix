@@ -147,3 +147,16 @@ class Executor:
             decision,
             output=output,
         )
+
+
+def retry_delays(config: RetryConfig, seed: int) -> tuple[float, ...]:
+    """Calculate planned delays without sleeping during offline execution."""
+    from diurnix.randomness import SeededRandom
+
+    random = SeededRandom(seed)
+    result = []
+    for attempt in range(1, config.max_attempts):
+        jitter_units = random.integer(0, 1_000_001) / 1_000_000
+        delay = config.base_delay_seconds * attempt + config.jitter_seconds * jitter_units
+        result.append(round(delay, 6))
+    return tuple(result)
