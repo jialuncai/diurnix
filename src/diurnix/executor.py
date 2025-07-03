@@ -70,12 +70,32 @@ def receipt_to_dict(receipt: ExecutionReceipt) -> dict[str, Any]:
     }
 
 
+@dataclass(frozen=True, slots=True)
+class RetryConfig:
+    """Bounded retry count and deterministic jitter range."""
+
+    max_attempts: int = 1
+    base_delay_seconds: float = 0.0
+    jitter_seconds: float = 0.0
+
+    def __post_init__(self) -> None:
+        from diurnix.errors import ValidationError
+
+        if self.max_attempts < 1 or self.max_attempts > 10:
+            raise ValidationError("retry attempts must be from one to ten")
+        if self.base_delay_seconds < 0 or self.jitter_seconds < 0:
+            raise ValidationError("retry delays cannot be negative")
+
+
 class Executor:
     """Invoke registry tools only after a policy decision."""
 
-    def __init__(self, registry: ToolRegistry, policy: PolicyEngine) -> None:
+    def __init__(
+        self, registry: ToolRegistry, policy: PolicyEngine, retry: RetryConfig | None = None
+    ) -> None:
         self.registry = registry
         self.policy = policy
+        self.retry = retry or RetryConfig()
 
     def execute(self, call: ToolCall, now: datetime) -> ExecutionReceipt:
         """Evaluate policy and return a receipt for every outcome."""
