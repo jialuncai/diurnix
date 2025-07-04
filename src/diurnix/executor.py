@@ -87,6 +87,16 @@ class RetryConfig:
             raise ValidationError("retry delays cannot be negative")
 
 
+@dataclass(slots=True)
+class CancellationToken:
+    cancelled: bool = False
+    reason: str = "cancelled"
+
+    def cancel(self, reason: str = "cancelled") -> None:
+        self.cancelled = True
+        self.reason = reason
+
+
 class Executor:
     """Invoke registry tools only after a policy decision."""
 
@@ -99,7 +109,12 @@ class Executor:
         self._idempotency: dict[str, ExecutionReceipt] = {}
 
     def execute(
-        self, call: ToolCall, now: datetime, *, idempotency_key: str | None = None
+        self,
+        call: ToolCall,
+        now: datetime,
+        *,
+        idempotency_key: str | None = None,
+        cancellation: CancellationToken | None = None,
     ) -> ExecutionReceipt:
         """Evaluate policy and return a receipt for every outcome."""
         spec = self.registry.require(call.tool)
@@ -110,6 +125,19 @@ class Executor:
         receipt_id = stable_identifier(
             "receipt", {"call_id": call.call_id, "tool": call.tool, "time": now.isoformat()}
         )
+        if cancellation is not None and cancellation.cancelled:
+            return ExecutionReceipt(
+                receipt_id,
+                call.call_id,
+                call.tool,
+                ExecutionStatus.CANCELLED,
+                now,
+                now,
+                0,
+                decision,
+                error=cancellation.reason,
+                idempotency_key=idempotency_key,
+            )
         if decision.effect is PolicyEffect.DENY:
             return ExecutionReceipt(
                 receipt_id, call.call_id, call.tool, ExecutionStatus.DENIED, now, now, 0, decision
