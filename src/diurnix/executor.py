@@ -96,10 +96,15 @@ class Executor:
         self.registry = registry
         self.policy = policy
         self.retry = retry or RetryConfig()
+        self._idempotency: dict[str, ExecutionReceipt] = {}
 
-    def execute(self, call: ToolCall, now: datetime) -> ExecutionReceipt:
+    def execute(
+        self, call: ToolCall, now: datetime, *, idempotency_key: str | None = None
+    ) -> ExecutionReceipt:
         """Evaluate policy and return a receipt for every outcome."""
         spec = self.registry.require(call.tool)
+        if idempotency_key is not None and idempotency_key in self._idempotency:
+            return self._idempotency[idempotency_key]
         action = PolicyAction(call.tool, spec.capabilities, spec.side_effect, call.arguments, now)
         decision = self.policy.decide(action)
         receipt_id = stable_identifier(
@@ -136,7 +141,7 @@ class Executor:
                 decision,
                 error=f"{type(error).__name__}: {error}",
             )
-        return ExecutionReceipt(
+        receipt = ExecutionReceipt(
             receipt_id,
             call.call_id,
             call.tool,
@@ -146,7 +151,11 @@ class Executor:
             attempts,
             decision,
             output=output,
+            idempotency_key=idempotency_key,
         )
+        if idempotency_key is not None:
+            self._idempotency[idempotency_key] = receipt
+        return receipt
 
 
 def retry_delays(config: RetryConfig, seed: int) -> tuple[float, ...]:
