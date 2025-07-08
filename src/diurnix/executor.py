@@ -197,3 +197,16 @@ def retry_delays(config: RetryConfig, seed: int) -> tuple[float, ...]:
         delay = config.base_delay_seconds * attempt + config.jitter_seconds * jitter_units
         result.append(round(delay, 6))
     return tuple(result)
+
+
+def execute_batch(
+    executor: Executor, calls: tuple[ToolCall, ...], now: datetime, *, stop_on_failure: bool = True
+) -> tuple[ExecutionReceipt, ...]:
+    """Execute in order and stop after the first non-success when requested."""
+    receipts = []
+    for call in calls:
+        receipt = executor.execute(call, now, idempotency_key=call.call_id)
+        receipts.append(receipt)
+        if stop_on_failure and receipt.status is not ExecutionStatus.SUCCEEDED:
+            break
+    return tuple(receipts)
