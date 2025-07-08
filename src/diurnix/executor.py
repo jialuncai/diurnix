@@ -22,6 +22,10 @@ class ExecutionStatus(StrEnum):
     TIMED_OUT = "timed_out"
 
 
+class ToolTimeout(TimeoutError):
+    """Signal that a deterministic adapter exceeded its configured deadline."""
+
+
 @dataclass(frozen=True, slots=True)
 class ExecutionReceipt:
     """Complete observable outcome for one attempted tool call."""
@@ -155,6 +159,19 @@ class Executor:
                 output = self.registry.invoke(call.tool, call.arguments)
                 error = None
                 break
+            except ToolTimeout as caught:
+                return ExecutionReceipt(
+                    receipt_id,
+                    call.call_id,
+                    call.tool,
+                    ExecutionStatus.TIMED_OUT,
+                    now,
+                    now,
+                    attempts,
+                    decision,
+                    error=str(caught) or "tool timed out",
+                    idempotency_key=idempotency_key,
+                )
             except Exception as caught:
                 error = caught
         if error is not None:
