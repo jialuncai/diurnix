@@ -88,3 +88,27 @@ class ApprovalQueue:
                 self._records[approval_id] = changed
                 expired.append(changed)
         return tuple(expired)
+
+    def decide(
+        self, approval_id: str, approved: bool, now: datetime, *, actor: str, reason: str
+    ) -> PendingApproval:
+        """Resolve exactly one still-pending approval."""
+        record = self._records.get(approval_id)
+        if record is None:
+            raise ValidationError(f"unknown approval: {approval_id}")
+        if record.status is not ApprovalStatus.PENDING:
+            raise ValidationError("approval is already resolved")
+        if now > record.expires_at:
+            self.expire(now)
+            raise ValidationError("approval has expired")
+        if not actor.strip() or not reason.strip():
+            raise ValidationError("approval actor and reason must not be blank")
+        changed = replace(
+            record,
+            status=ApprovalStatus.APPROVED if approved else ApprovalStatus.DENIED,
+            decided_at=now,
+            actor=actor,
+            reason=reason,
+        )
+        self._records[approval_id] = changed
+        return changed
