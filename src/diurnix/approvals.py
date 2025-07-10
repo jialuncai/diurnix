@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from enum import StrEnum
 
@@ -72,3 +72,19 @@ class ApprovalQueue:
                 key=lambda item: (item.created_at, item.approval_id),
             )
         )
+
+    def expire(self, now: datetime) -> tuple[PendingApproval, ...]:
+        """Expire pending requests at their inclusive deadline."""
+        expired = []
+        for approval_id, record in tuple(self._records.items()):
+            if record.status is ApprovalStatus.PENDING and now >= record.expires_at:
+                changed = replace(
+                    record,
+                    status=ApprovalStatus.EXPIRED,
+                    decided_at=now,
+                    actor="system",
+                    reason="approval expired",
+                )
+                self._records[approval_id] = changed
+                expired.append(changed)
+        return tuple(expired)
