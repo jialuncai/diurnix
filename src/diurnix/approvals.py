@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import StrEnum
 
 from diurnix.errors import ValidationError
@@ -35,3 +35,40 @@ class PendingApproval:
             raise ValidationError("approval expiry must follow creation")
         if self.escalation_level < 0:
             raise ValidationError("approval escalation level cannot be negative")
+
+
+class ApprovalQueue:
+    """Mutable queue whose records remain immutable snapshots."""
+
+    def __init__(self) -> None:
+        self._records: dict[str, PendingApproval] = {}
+        self._call_ids: set[str] = set()
+
+    def submit(
+        self, call: ToolCall, now: datetime, *, ttl: timedelta = timedelta(hours=1)
+    ) -> PendingApproval:
+        """Create one pending request for a call identity."""
+        from diurnix.identifiers import stable_identifier
+
+        if ttl <= timedelta(0):
+            raise ValidationError("approval TTL must be positive")
+        if call.call_id in self._call_ids:
+            raise ValidationError(f"approval already exists for call: {call.call_id}")
+        approval_id = stable_identifier(
+            "approval", {"call_id": call.call_id, "created_at": now.isoformat()}
+        )
+        record = PendingApproval(approval_id, call, now, now + ttl)
+        self._records[approval_id] = record
+        self._call_ids.add(call.call_id)
+        return record
+
+    def get(self, approval_id: str) -> PendingApproval | None:
+        return self._records.get(approval_id)
+
+    def pending(self) -> tuple[PendingApproval, ...]:
+        return tuple(
+            sorted(
+                (item for item in self._records.values() if item.status is ApprovalStatus.PENDING),
+                key=lambda item: (item.created_at, item.approval_id),
+            )
+        )
