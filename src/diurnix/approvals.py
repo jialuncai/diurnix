@@ -158,3 +158,24 @@ def apply_scripted_approver(
     approved, reason = response
     decided_at = record.created_at + timedelta(seconds=approver.latency_seconds)
     return queue.decide(approval_id, approved, decided_at, actor=approver.name, reason=reason)
+
+
+def escalate(
+    queue: ApprovalQueue, approval_id: str, now: datetime, *, actor: str
+) -> PendingApproval:
+    """Advance a pending approval to the next escalation level."""
+    record = queue.get(approval_id)
+    if record is None:
+        raise ValidationError(f"unknown approval: {approval_id}")
+    if record.status is not ApprovalStatus.PENDING:
+        raise ValidationError("only pending approvals can escalate")
+    changed = replace(
+        record,
+        status=ApprovalStatus.ESCALATED,
+        decided_at=now,
+        actor=actor,
+        reason="escalated",
+        escalation_level=record.escalation_level + 1,
+    )
+    queue._records[approval_id] = changed
+    return changed
