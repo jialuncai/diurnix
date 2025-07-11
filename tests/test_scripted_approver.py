@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -33,3 +33,29 @@ def test_scripted_approver_validates_name_and_latency() -> None:
         ScriptedApprover("", ApproverMode.DEFER)
     with pytest.raises(ValidationError, match="invalid"):
         ScriptedApprover("user", ApproverMode.DEFER, -1)
+
+
+def test_scripted_approver_applies_simulated_latency() -> None:
+    from diurnix.approvals import ApprovalQueue, ApprovalStatus, apply_scripted_approver
+
+    queue = ApprovalQueue()
+    record = queue.submit(APPROVAL.call, APPROVAL.created_at)
+    changed = apply_scripted_approver(
+        queue, record.approval_id, ScriptedApprover("persona", ApproverMode.AUTO_ALLOW, 2.5)
+    )
+    assert changed.status is ApprovalStatus.APPROVED
+    assert changed.decided_at == record.created_at + timedelta(seconds=2.5)
+    assert changed.actor == "persona"
+
+
+def test_deferred_script_leaves_request_pending() -> None:
+    from diurnix.approvals import ApprovalQueue, apply_scripted_approver
+
+    queue = ApprovalQueue()
+    record = queue.submit(APPROVAL.call, APPROVAL.created_at)
+    assert (
+        apply_scripted_approver(
+            queue, record.approval_id, ScriptedApprover("persona", ApproverMode.DEFER)
+        )
+        is record
+    )

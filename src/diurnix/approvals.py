@@ -143,3 +143,18 @@ class ScriptedApprover:
             return None
         approved = self.mode is ApproverMode.AUTO_ALLOW
         return approved, "scripted allow" if approved else "scripted deny"
+
+
+def apply_scripted_approver(
+    queue: ApprovalQueue, approval_id: str, approver: ScriptedApprover
+) -> PendingApproval:
+    """Apply one scripted response at its simulated decision time."""
+    record = queue.get(approval_id)
+    if record is None:
+        raise ValidationError(f"unknown approval: {approval_id}")
+    response = approver.response(record)
+    if response is None:
+        return record
+    approved, reason = response
+    decided_at = record.created_at + timedelta(seconds=approver.latency_seconds)
+    return queue.decide(approval_id, approved, decided_at, actor=approver.name, reason=reason)
