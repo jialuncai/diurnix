@@ -118,3 +118,28 @@ class ApprovalQueue:
         return tuple(
             sorted(self._records.values(), key=lambda item: (item.created_at, item.approval_id))
         )
+
+
+class ApproverMode(StrEnum):
+    AUTO_ALLOW = "auto_allow"
+    AUTO_DENY = "auto_deny"
+    DEFER = "defer"
+
+
+@dataclass(frozen=True, slots=True)
+class ScriptedApprover:
+    """Offline deterministic adapter for approval tests and examples."""
+
+    name: str
+    mode: ApproverMode
+    latency_seconds: float = 0.0
+
+    def __post_init__(self) -> None:
+        if not self.name.strip() or self.latency_seconds < 0:
+            raise ValidationError("approver name and latency are invalid")
+
+    def response(self, approval: PendingApproval) -> tuple[bool, str] | None:
+        if self.mode is ApproverMode.DEFER:
+            return None
+        approved = self.mode is ApproverMode.AUTO_ALLOW
+        return approved, "scripted allow" if approved else "scripted deny"
