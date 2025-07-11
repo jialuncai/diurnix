@@ -112,3 +112,9 @@ class ApprovalQueue:
         )
         self._records[approval_id] = changed
         return changed
+
+    def history(self) -> tuple[PendingApproval, ...]:
+        """Return every request in creation order, including resolved records."""
+        return tuple(
+            sorted(self._records.values(), key=lambda item: (item.created_at, item.approval_id))
+        )
