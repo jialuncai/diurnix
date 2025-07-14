@@ -179,3 +179,28 @@ def escalate(
     )
     queue._records[approval_id] = changed
     return changed
+
+
+def run_escalation_chain(
+    queue: ApprovalQueue, approval_id: str, approvers: tuple[ScriptedApprover, ...]
+) -> PendingApproval:
+    """Ask scripted approvers in order until one resolves or all defer."""
+    record = queue.get(approval_id)
+    if record is None:
+        raise ValidationError(f"unknown approval: {approval_id}")
+    elapsed = 0.0
+    for approver in approvers:
+        response = approver.response(record)
+        elapsed += approver.latency_seconds
+        if response is not None:
+            approved, reason = response
+            return queue.decide(
+                approval_id,
+                approved,
+                record.created_at + timedelta(seconds=elapsed),
+                actor=approver.name,
+                reason=reason,
+            )
+    return escalate(
+        queue, approval_id, record.created_at + timedelta(seconds=elapsed), actor="chain"
+    )
