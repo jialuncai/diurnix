@@ -221,3 +221,26 @@ def approval_metrics(queue: ApprovalQueue) -> dict[str, float | int]:
         if history
         else 0.0,
     }
+
+
+def approval_queue_to_dict(queue: ApprovalQueue) -> dict[str, object]:
+    """Encode calls and every lifecycle field in creation order."""
+    from diurnix.tool_calls import tool_call_to_dict
+
+    return {
+        "schema_version": 1,
+        "approvals": [
+            {
+                "approval_id": item.approval_id,
+                "call": tool_call_to_dict(item.call),
+                "created_at": item.created_at.isoformat(),
+                "expires_at": item.expires_at.isoformat(),
+                "status": item.status.value,
+                "decided_at": item.decided_at.isoformat() if item.decided_at else None,
+                "actor": item.actor,
+                "reason": item.reason,
+                "escalation_level": item.escalation_level,
+            }
+            for item in queue.history()
+        ],
+    }
