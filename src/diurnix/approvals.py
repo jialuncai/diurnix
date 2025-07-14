@@ -204,3 +204,20 @@ def run_escalation_chain(
     return escalate(
         queue, approval_id, record.created_at + timedelta(seconds=elapsed), actor="chain"
     )
+
+
+def approval_metrics(queue: ApprovalQueue) -> dict[str, float | int]:
+    """Calculate simulated latency and outcome rates over resolved history."""
+    history = queue.history()
+    resolved = [item for item in history if item.decided_at is not None]
+    latencies = [(item.decided_at - item.created_at).total_seconds() for item in resolved]
+    return {
+        "request_count": len(history),
+        "resolved_count": len(resolved),
+        "mean_latency_seconds": round(sum(latencies) / len(latencies), 6) if latencies else 0.0,
+        "escalation_rate": round(
+            sum(item.status is ApprovalStatus.ESCALATED for item in history) / len(history), 6
+        )
+        if history
+        else 0.0,
+    }
