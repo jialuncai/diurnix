@@ -106,3 +106,49 @@ def test_receipt_decoder_rejects_schema_drift() -> None:
     )
     with pytest.raises(ValidationError, match="match schema"):
         receipt_from_dict({**valid, "extra": True})
+
+
+def test_receipt_decoder_rejects_unknown_status_and_bad_time() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.executor import receipt_from_dict
+
+    valid = receipt_to_dict(
+        ExecutionReceipt(
+            "receipt_1",
+            "call_1",
+            "clock.now",
+            ExecutionStatus.DENIED,
+            NOW,
+            NOW,
+            0,
+            PolicyDecision(PolicyEffect.DENY, "deny", "blocked", {}),
+        )
+    )
+    with pytest.raises(ValidationError, match="invalid execution"):
+        receipt_from_dict({**valid, "status": "unknown"})
+    with pytest.raises(ValidationError, match="invalid execution"):
+        receipt_from_dict({**valid, "started_at": "not-a-time"})
+
+
+def test_receipt_decoder_applies_time_order_validation() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.executor import receipt_from_dict
+
+    valid = receipt_to_dict(
+        ExecutionReceipt(
+            "receipt_1",
+            "call_1",
+            "clock.now",
+            ExecutionStatus.DENIED,
+            NOW,
+            NOW,
+            0,
+            PolicyDecision(PolicyEffect.DENY, "deny", "blocked", {}),
+        )
+    )
+    with pytest.raises(ValidationError, match="precedes"):
+        receipt_from_dict({**valid, "finished_at": "2026-10-30T07:00:00+00:00"})
