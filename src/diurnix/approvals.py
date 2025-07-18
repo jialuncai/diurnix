@@ -244,3 +244,32 @@ def approval_queue_to_dict(queue: ApprovalQueue) -> dict[str, object]:
             for item in queue.history()
         ],
     }
+
+
+def approval_queue_from_dict(value: dict[str, object]) -> ApprovalQueue:
+    """Restore a strict approval lifecycle checkpoint."""
+    from diurnix.tool_calls import tool_call_from_dict
+
+    if set(value) != {"schema_version", "approvals"} or value.get("schema_version") != 1:
+        raise ValidationError("approval queue does not match schema")
+    if not isinstance(value["approvals"], list):
+        raise ValidationError("approvals must be an array")
+    queue = ApprovalQueue()
+    try:
+        for item in value["approvals"]:
+            record = PendingApproval(
+                item["approval_id"],
+                tool_call_from_dict(item["call"]),
+                datetime.fromisoformat(item["created_at"]),
+                datetime.fromisoformat(item["expires_at"]),
+                ApprovalStatus(item["status"]),
+                datetime.fromisoformat(item["decided_at"]) if item["decided_at"] else None,
+                item["actor"],
+                item["reason"],
+                item["escalation_level"],
+            )
+            queue._records[record.approval_id] = record
+            queue._call_ids.add(record.call.call_id)
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid approval queue payload") from error
+    return queue
