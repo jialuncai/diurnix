@@ -227,3 +227,21 @@ def execute_batch(
         if stop_on_failure and receipt.status is not ExecutionStatus.SUCCEEDED:
             break
     return tuple(receipts)
+
+
+def execute_approved(executor: Executor, approval: object, now: datetime) -> ExecutionReceipt:
+    """Invoke an approved pending call under a one-call allow policy."""
+    from diurnix.approvals import ApprovalStatus, PendingApproval
+
+    if not isinstance(approval, PendingApproval) or approval.status is not ApprovalStatus.APPROVED:
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("approval record is not approved")
+    original = executor.policy
+    try:
+        executor.policy = PolicyEngine((), default_effect=PolicyEffect.ALLOW)
+        return executor.execute(
+            approval.call, now, idempotency_key=f"approval:{approval.approval_id}"
+        )
+    finally:
+        executor.policy = original
