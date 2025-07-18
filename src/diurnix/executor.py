@@ -290,3 +290,18 @@ def receipt_from_dict(value: dict[str, Any]) -> ExecutionReceipt:
         )
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError("invalid execution receipt payload") from error
+
+
+def execution_metrics(receipts: tuple[ExecutionReceipt, ...]) -> dict[str, object]:
+    """Count statuses and attempts, retaining zero-count status fields."""
+    return {
+        "receipt_count": len(receipts),
+        "statuses": {
+            status.value: sum(item.status is status for item in receipts)
+            for status in ExecutionStatus
+        },
+        "attempt_count": sum(item.attempts for item in receipts),
+        "denied_execution_count": sum(
+            item.attempts > 0 and item.status is ExecutionStatus.DENIED for item in receipts
+        ),
+    }
