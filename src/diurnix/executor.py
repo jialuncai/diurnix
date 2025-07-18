@@ -111,6 +111,7 @@ class Executor:
         self.policy = policy
         self.retry = retry or RetryConfig()
         self._idempotency: dict[str, ExecutionReceipt] = {}
+        self._idempotency_inputs: dict[str, tuple[str, str]] = {}
 
     def execute(
         self,
@@ -123,6 +124,12 @@ class Executor:
         """Evaluate policy and return a receipt for every outcome."""
         spec = self.registry.require(call.tool)
         if idempotency_key is not None and idempotency_key in self._idempotency:
+            from diurnix.codec import canonical_dumps
+            from diurnix.errors import ValidationError
+
+            fingerprint = (call.tool, canonical_dumps(call.arguments))
+            if self._idempotency_inputs[idempotency_key] != fingerprint:
+                raise ValidationError("idempotency key was reused for different input")
             return self._idempotency[idempotency_key]
         action = PolicyAction(call.tool, spec.capabilities, spec.side_effect, call.arguments, now)
         decision = self.policy.decide(action)
@@ -199,7 +206,10 @@ class Executor:
             idempotency_key=idempotency_key,
         )
         if idempotency_key is not None:
+            from diurnix.codec import canonical_dumps
+
             self._idempotency[idempotency_key] = receipt
+            self._idempotency_inputs[idempotency_key] = (call.tool, canonical_dumps(call.arguments))
         return receipt
 
 
