@@ -66,3 +66,43 @@ def test_receipt_wire_contains_no_unredacted_decision_argument() -> None:
     text = canonical_dumps(receipt_to_dict(receipt))
     assert "[EMAIL]" in text
     assert "example.test" not in text
+
+
+def test_receipt_mapping_roundtrips_every_outcome_field() -> None:
+    from diurnix.executor import receipt_from_dict
+
+    receipt = ExecutionReceipt(
+        "receipt_1",
+        "call_1",
+        "clock.now",
+        ExecutionStatus.SUCCEEDED,
+        NOW,
+        NOW,
+        2,
+        PolicyDecision(PolicyEffect.ALLOW, "read", "allowed", {}),
+        output={"value": 3},
+        idempotency_key="key",
+    )
+    assert receipt_from_dict(receipt_to_dict(receipt)) == receipt
+
+
+def test_receipt_decoder_rejects_schema_drift() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.executor import receipt_from_dict
+
+    valid = receipt_to_dict(
+        ExecutionReceipt(
+            "receipt_1",
+            "call_1",
+            "clock.now",
+            ExecutionStatus.DENIED,
+            NOW,
+            NOW,
+            0,
+            PolicyDecision(PolicyEffect.DENY, "deny", "blocked", {}),
+        )
+    )
+    with pytest.raises(ValidationError, match="match schema"):
+        receipt_from_dict({**valid, "extra": True})

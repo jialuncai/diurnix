@@ -245,3 +245,48 @@ def execute_approved(executor: Executor, approval: object, now: datetime) -> Exe
         )
     finally:
         executor.policy = original
+
+
+def receipt_from_dict(value: dict[str, Any]) -> ExecutionReceipt:
+    """Decode a strict current-version execution receipt."""
+    from diurnix.errors import ValidationError
+
+    expected = {
+        "schema_version",
+        "receipt_id",
+        "call_id",
+        "tool",
+        "status",
+        "started_at",
+        "finished_at",
+        "attempts",
+        "decision",
+        "output",
+        "error",
+        "idempotency_key",
+    }
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("execution receipt does not match schema")
+    try:
+        decision_value = value["decision"]
+        decision = PolicyDecision(
+            PolicyEffect(decision_value["effect"]),
+            decision_value["rule_id"],
+            decision_value["reason"],
+            dict(decision_value["redacted_arguments"]),
+        )
+        return ExecutionReceipt(
+            value["receipt_id"],
+            value["call_id"],
+            value["tool"],
+            ExecutionStatus(value["status"]),
+            datetime.fromisoformat(value["started_at"]),
+            datetime.fromisoformat(value["finished_at"]),
+            value["attempts"],
+            decision,
+            value["output"],
+            value["error"],
+            value["idempotency_key"],
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid execution receipt payload") from error
