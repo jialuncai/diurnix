@@ -28,3 +28,27 @@ def test_executor_checkpoint_contains_only_successful_keys() -> None:
     checkpoint = executor_checkpoint(runtime)
     assert [item["key"] for item in checkpoint["idempotency"]] == ["a", "b"]
     assert all(item["receipt"]["status"] == "succeeded" for item in checkpoint["idempotency"])
+
+
+def test_executor_checkpoint_restores_without_replaying_side_effect() -> None:
+    from diurnix.executor import restore_executor_checkpoint
+
+    original_calls: list[int] = []
+    original = executor(original_calls)
+    receipt = original.execute(ToolCall("call_1", "counter", {}), NOW, idempotency_key="key")
+    recovered_calls: list[int] = []
+    recovered = executor(recovered_calls)
+    restore_executor_checkpoint(recovered, executor_checkpoint(original))
+    replayed = recovered.execute(ToolCall("call_2", "counter", {}), NOW, idempotency_key="key")
+    assert replayed == receipt
+    assert recovered_calls == []
+
+
+def test_executor_checkpoint_rejects_wrong_schema() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.executor import restore_executor_checkpoint
+
+    with pytest.raises(ValidationError, match="match schema"):
+        restore_executor_checkpoint(executor([]), {"schema_version": 2, "idempotency": []})

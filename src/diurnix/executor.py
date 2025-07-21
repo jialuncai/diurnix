@@ -330,3 +330,25 @@ def executor_checkpoint(executor: Executor) -> dict[str, Any]:
             for key in sorted(executor._idempotency)
         ],
     }
+
+
+def restore_executor_checkpoint(executor: Executor, value: dict[str, Any]) -> None:
+    """Restore validated successful receipts into an empty executor cache."""
+    from diurnix.errors import ValidationError
+
+    if set(value) != {"schema_version", "idempotency"} or value.get("schema_version") != 1:
+        raise ValidationError("executor checkpoint does not match schema")
+    if executor._idempotency:
+        raise ValidationError("executor idempotency cache is not empty")
+    try:
+        for item in value["idempotency"]:
+            receipt = receipt_from_dict(item["receipt"])
+            if (
+                receipt.status is not ExecutionStatus.SUCCEEDED
+                or receipt.idempotency_key != item["key"]
+            ):
+                raise ValidationError("checkpoint contains invalid idempotent receipt")
+            executor._idempotency[item["key"]] = receipt
+            executor._idempotency_inputs[item["key"]] = tuple(item["input"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid executor checkpoint payload") from error
