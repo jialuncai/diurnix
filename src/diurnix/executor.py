@@ -315,3 +315,18 @@ def execution_metrics(receipts: tuple[ExecutionReceipt, ...]) -> dict[str, objec
             item.attempts > 0 and item.status is ExecutionStatus.DENIED for item in receipts
         ),
     }
+
+
+def executor_checkpoint(executor: Executor) -> dict[str, Any]:
+    """Encode successful idempotency state for crash recovery."""
+    return {
+        "schema_version": 1,
+        "idempotency": [
+            {
+                "key": key,
+                "input": list(executor._idempotency_inputs[key]),
+                "receipt": receipt_to_dict(executor._idempotency[key]),
+            }
+            for key in sorted(executor._idempotency)
+        ],
+    }
