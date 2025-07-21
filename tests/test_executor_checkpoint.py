@@ -52,3 +52,29 @@ def test_executor_checkpoint_rejects_wrong_schema() -> None:
 
     with pytest.raises(ValidationError, match="match schema"):
         restore_executor_checkpoint(executor([]), {"schema_version": 2, "idempotency": []})
+
+
+def test_executor_checkpoint_rejects_failed_receipt() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.executor import restore_executor_checkpoint
+
+    original = executor([])
+    original.execute(ToolCall("call_1", "counter", {}), NOW, idempotency_key="key")
+    checkpoint = executor_checkpoint(original)
+    checkpoint["idempotency"][0]["receipt"]["status"] = "failed"
+    with pytest.raises(ValidationError, match="invalid idempotent"):
+        restore_executor_checkpoint(executor([]), checkpoint)
+
+
+def test_executor_checkpoint_requires_empty_target_cache() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.executor import restore_executor_checkpoint
+
+    target = executor([])
+    target.execute(ToolCall("call_1", "counter", {}), NOW, idempotency_key="existing")
+    with pytest.raises(ValidationError, match="not empty"):
+        restore_executor_checkpoint(target, {"schema_version": 1, "idempotency": []})
