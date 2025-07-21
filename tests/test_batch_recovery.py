@@ -42,3 +42,30 @@ def test_resume_batch_skips_previously_committed_side_effects() -> None:
     assert state == [0, 1, 2, 3]
     assert len(receipts) == 4
     assert receipts[:2] == tuple(first._idempotency[call.call_id] for call in CALLS[:2])
+
+
+def test_crash_resume_matches_uninterrupted_final_state() -> None:
+    uninterrupted_state: list[int] = []
+    uninterrupted = runtime(uninterrupted_state)
+    uninterrupted_receipts = resume_batch(uninterrupted, CALLS, NOW)
+
+    resumed_state: list[int] = []
+    before_crash = runtime(resumed_state)
+    resume_batch(before_crash, CALLS[:2], NOW)
+    after_crash = runtime(resumed_state)
+    restore_executor_checkpoint(after_crash, executor_checkpoint(before_crash))
+    resumed_receipts = resume_batch(after_crash, CALLS, NOW)
+
+    assert resumed_state == uninterrupted_state == [0, 1, 2, 3]
+    assert [item.output for item in resumed_receipts] == [
+        item.output for item in uninterrupted_receipts
+    ]
+
+
+def test_repeated_resume_is_idempotent() -> None:
+    state: list[int] = []
+    executor = runtime(state)
+    first = resume_batch(executor, CALLS, NOW)
+    second = resume_batch(executor, CALLS, NOW)
+    assert second == first
+    assert state == [0, 1, 2, 3]
