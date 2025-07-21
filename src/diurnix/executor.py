@@ -352,3 +352,10 @@ def restore_executor_checkpoint(executor: Executor, value: dict[str, Any]) -> No
             executor._idempotency_inputs[item["key"]] = tuple(item["input"])
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError("invalid executor checkpoint payload") from error
+
+
+def resume_batch(
+    executor: Executor, calls: tuple[ToolCall, ...], now: datetime
+) -> tuple[ExecutionReceipt, ...]:
+    """Execute a batch using call IDs as recovery-safe idempotency keys."""
+    return tuple(executor.execute(call, now, idempotency_key=call.call_id) for call in calls)
