@@ -26,3 +26,20 @@ def test_empty_execution_metrics_retain_status_schema() -> None:
     metrics = execution_metrics(())
     assert set(metrics["statuses"]) == {status.value for status in ExecutionStatus}
     assert metrics["attempt_count"] == 0
+
+
+def test_denied_receipts_always_have_zero_attempts() -> None:
+    denied = PolicyDecision(PolicyEffect.DENY, "deny", "blocked", {})
+    receipts = tuple(
+        ExecutionReceipt(f"r{i}", f"c{i}", "mail.send", ExecutionStatus.DENIED, NOW, NOW, 0, denied)
+        for i in range(100)
+    )
+    metrics = execution_metrics(receipts)
+    assert metrics["statuses"]["denied"] == 100
+    assert metrics["attempt_count"] == 0
+    assert metrics["denied_execution_count"] == 0
+
+
+def test_receipt_status_counts_sum_to_receipt_count() -> None:
+    metrics = execution_metrics(())
+    assert sum(metrics["statuses"].values()) == metrics["receipt_count"]
