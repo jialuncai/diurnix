@@ -359,3 +359,16 @@ def resume_batch(
 ) -> tuple[ExecutionReceipt, ...]:
     """Execute a batch using call IDs as recovery-safe idempotency keys."""
     return tuple(executor.execute(call, now, idempotency_key=call.call_id) for call in calls)
+
+
+def executor_recovery_manifest(executor: Executor) -> dict[str, Any]:
+    """Return a checksummed crash-recovery checkpoint."""
+    from diurnix.integrity import content_checksum
+
+    checkpoint = executor_checkpoint(executor)
+    return {
+        "kind": "executor.checkpoint",
+        "schema_version": 1,
+        "checksum": content_checksum(checkpoint),
+        "checkpoint": checkpoint,
+    }
