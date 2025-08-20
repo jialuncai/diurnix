@@ -29,6 +29,8 @@ def test_module_imports_in_fresh_interpreter() -> None:
 
 def test_foundation_public_api_is_explicit_and_importable() -> None:
     expected = {
+        "ApprovalQueue",
+        "ApprovalStatus",
         "ArtifactEnvelope",
         "Budget",
         "CalendarEntry",
@@ -36,7 +38,11 @@ def test_foundation_public_api_is_explicit_and_importable() -> None:
         "DiurnixError",
         "HabitCheckIn",
         "InboxMessage",
+        "ExecutionReceipt",
+        "ExecutionStatus",
+        "Executor",
         "IntegrityError",
+        "PendingApproval",
         "PersonalEvent",
         "Persona",
         "PolicyAction",
@@ -44,6 +50,7 @@ def test_foundation_public_api_is_explicit_and_importable() -> None:
         "PolicyEffect",
         "PolicyEngine",
         "PolicyRule",
+        "RetryConfig",
         "SeededRandom",
         "SideEffect",
         "SyntheticBundle",
