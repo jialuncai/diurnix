@@ -372,3 +372,16 @@ def executor_recovery_manifest(executor: Executor) -> dict[str, Any]:
         "checksum": content_checksum(checkpoint),
         "checkpoint": checkpoint,
     }
+
+
+def execution_audit(
+    receipts: tuple[ExecutionReceipt, ...], approval_metrics: dict[str, float | int]
+) -> dict[str, object]:
+    """Combine execution invariants and approval facts for runtime scorecards."""
+    metrics = execution_metrics(receipts)
+    return {
+        "execution": metrics,
+        "approvals": dict(approval_metrics),
+        "policy_violations": metrics["denied_execution_count"],
+        "safe": metrics["denied_execution_count"] == 0,
+    }
