@@ -273,3 +273,17 @@ def approval_queue_from_dict(value: dict[str, object]) -> ApprovalQueue:
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError("invalid approval queue payload") from error
     return queue
+
+
+def approval_queue_manifest(queue: ApprovalQueue) -> dict[str, object]:
+    """Return checksummed approval history and simulated metrics."""
+    from diurnix.integrity import content_checksum
+
+    encoded = approval_queue_to_dict(queue)
+    return {
+        "kind": "approval.queue",
+        "schema_version": 1,
+        "checksum": content_checksum(encoded),
+        "metrics": approval_metrics(queue),
+        "queue": encoded,
+    }
