@@ -46,3 +46,21 @@ def test_receipt_validates_time_and_attempts() -> None:
         )
     with pytest.raises(ValidationError, match="negative"):
         ExecutionReceipt("r", "c", "tool", ExecutionStatus.FAILED, NOW, NOW, -1, DECISION)
+
+
+def test_execution_receipt_dataclass_fields_are_exhaustive() -> None:
+    from dataclasses import fields
+
+    assert [field.name for field in fields(ExecutionReceipt)] == [
+        "receipt_id",
+        "call_id",
+        "tool",
+        "status",
+        "started_at",
+        "finished_at",
+        "attempts",
+        "decision",
+        "output",
+        "error",
+        "idempotency_key",
+    ]

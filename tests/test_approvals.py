@@ -31,3 +31,19 @@ def test_pending_approval_validates_expiry_and_level() -> None:
         PendingApproval("approval_1", CALL, NOW, NOW)
     with pytest.raises(ValidationError, match="cannot be negative"):
         PendingApproval("approval_1", CALL, NOW, NOW + timedelta(1), escalation_level=-1)
+
+
+def test_pending_approval_dataclass_fields_are_exhaustive() -> None:
+    from dataclasses import fields
+
+    assert [field.name for field in fields(PendingApproval)] == [
+        "approval_id",
+        "call",
+        "created_at",
+        "expires_at",
+        "status",
+        "decided_at",
+        "actor",
+        "reason",
+        "escalation_level",
+    ]
