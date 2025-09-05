@@ -53,3 +53,26 @@ class PlanStep:
             raise ValidationError("step money budget cannot be negative")
         for name in (*self.inputs, *self.outputs):
             validate_identifier(name, label="port")
+
+
+@dataclass(frozen=True, slots=True)
+class Plan:
+    plan_id: str
+    steps: tuple[PlanStep, ...]
+    schema_version: int = 1
+
+    def __post_init__(self) -> None:
+        from diurnix.identifiers import validate_identifier
+
+        validate_identifier(self.plan_id, label="plan_id")
+        if self.schema_version != 1:
+            raise ValidationError("unsupported plan schema version")
+        if not self.steps:
+            raise ValidationError("plan requires at least one step")
+        ids = [step.step_id for step in self.steps]
+        if len(set(ids)) != len(ids):
+            raise ValidationError("plan step IDs must be unique")
+
+    @property
+    def total_money_budget(self) -> float:
+        return round(sum(step.money_budget for step in self.steps), 6)
