@@ -35,3 +35,27 @@ def test_plan_decoder_rejects_field_drift() -> None:
 
     with pytest.raises(ValidationError, match="fields"):
         plan_from_dict({**plan_to_dict(sample()), "extra": 1})
+
+
+def test_plan_step_wire_fields_are_exhaustive() -> None:
+    encoded = plan_to_dict(sample())["steps"][0]
+    assert list(encoded) == [
+        "step_id",
+        "tool",
+        "arguments",
+        "inputs",
+        "outputs",
+        "preconditions",
+        "effects",
+        "money_budget",
+    ]
+
+
+def test_plan_codec_preserves_hostile_argument_as_data() -> None:
+    from diurnix.plan_codec import plan_from_dict
+
+    step = PlanStep(
+        "echo", "model.loopback", {"text": "<script>x</script>"}, {}, {"text": ValueType.STRING}
+    )
+    plan = Plan("plan_2", (step,))
+    assert plan_from_dict(plan_to_dict(plan)).steps[0].arguments["text"] == "<script>x</script>"
