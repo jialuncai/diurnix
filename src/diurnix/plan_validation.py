@@ -45,3 +45,17 @@ def validate_acyclic(plan: Plan) -> None:
 
     for node in sorted(graph):
         visit(node)
+
+
+def topological_steps(plan: Plan) -> tuple[str, ...]:
+    validate_acyclic(plan)
+    graph = dependency_graph(plan)
+    result = []
+    remaining = set(graph)
+    while remaining:
+        ready = sorted(node for node in remaining if graph[node].isdisjoint(remaining))
+        if not ready:
+            raise ValidationError("plan dependency cycle")
+        result.extend(ready)
+        remaining.difference_update(ready)
+    return tuple(result)
