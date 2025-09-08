@@ -72,3 +72,17 @@ def validate_types(plan: Plan) -> None:
                     f"type mismatch: expected {ref.value_type.value}, got {actual.value}",
                     path=f"$.steps.{step.step_id}.inputs.{name}",
                 )
+
+
+def validate_conditions(plan: Plan, initial: tuple[str, ...] = ()) -> None:
+    available = set(initial)
+    by_id = {step.step_id: step for step in plan.steps}
+    for identity in topological_steps(plan):
+        step = by_id[identity]
+        missing = sorted(set(step.preconditions) - available)
+        if missing:
+            raise ValidationError(
+                f"unsatisfied preconditions: {', '.join(missing)}",
+                path=f"$.steps.{identity}.preconditions",
+            )
+        available.update(step.effects)
