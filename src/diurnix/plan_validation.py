@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from diurnix.errors import ValidationError
-from diurnix.plans import Plan
+from diurnix.plans import Plan, ValueType
 
 
 def validate_references(plan: Plan) -> None:
@@ -59,3 +59,16 @@ def topological_steps(plan: Plan) -> tuple[str, ...]:
         result.extend(ready)
         remaining.difference_update(ready)
     return tuple(result)
+
+
+def validate_types(plan: Plan) -> None:
+    validate_references(plan)
+    steps = {step.step_id: step for step in plan.steps}
+    for step in plan.steps:
+        for name, ref in step.inputs.items():
+            actual = steps[ref.step_id].outputs[ref.output]
+            if ref.value_type is not actual and ValueType.ANY not in (ref.value_type, actual):
+                raise ValidationError(
+                    f"type mismatch: expected {ref.value_type.value}, got {actual.value}",
+                    path=f"$.steps.{step.step_id}.inputs.{name}",
+                )
