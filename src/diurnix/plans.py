@@ -76,3 +76,13 @@ class Plan:
     @property
     def total_money_budget(self) -> float:
         return round(sum(step.money_budget for step in self.steps), 6)
+
+
+def diff_plans(before: Plan, after: Plan) -> dict[str, tuple[str, ...]]:
+    old = {step.step_id: step for step in before.steps}
+    new = {step.step_id: step for step in after.steps}
+    return {
+        "added": tuple(sorted(set(new) - set(old))),
+        "removed": tuple(sorted(set(old) - set(new))),
+        "changed": tuple(sorted(key for key in set(old) & set(new) if old[key] != new[key])),
+    }
