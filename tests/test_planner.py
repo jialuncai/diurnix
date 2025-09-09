@@ -24,3 +24,13 @@ def test_planner_resolves_unique_capability() -> None:
 def test_planner_reports_missing_capability() -> None:
     with pytest.raises(ValidationError, match="no tool"):
         DeterministicPlanner(registry()).resolve("mail.send")
+
+
+def test_planner_rejects_ambiguous_capability() -> None:
+    tools = registry()
+    tools.register(
+        ToolSpec("clock.other", "Other.", {"type": "object", "properties": {}}, ("clock.read",)),
+        lambda a: None,
+    )
+    with pytest.raises(ValidationError, match="ambiguous"):
+        DeterministicPlanner(tools).resolve("clock.read")
