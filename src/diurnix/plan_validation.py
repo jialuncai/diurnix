@@ -86,3 +86,9 @@ def validate_conditions(plan: Plan, initial: tuple[str, ...] = ()) -> None:
                 path=f"$.steps.{identity}.preconditions",
             )
         available.update(step.effects)
+
+
+def validate_plan(plan: Plan, initial: tuple[str, ...] = ()) -> None:
+    validate_acyclic(plan)
+    validate_types(plan)
+    validate_conditions(plan, initial)
