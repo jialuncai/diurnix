@@ -55,3 +55,16 @@ def plan_from_dict(value: dict[str, Any]) -> Plan:
         return Plan(value["plan_id"], tuple(steps), value["schema_version"])
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError("invalid plan payload") from error
+
+
+def plan_manifest(plan: Plan) -> dict[str, Any]:
+    from diurnix.integrity import content_checksum
+
+    encoded = plan_to_dict(plan)
+    return {
+        "kind": "agent.plan",
+        "schema_version": 1,
+        "step_count": len(plan.steps),
+        "checksum": content_checksum(encoded),
+        "plan": encoded,
+    }
