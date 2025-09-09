@@ -18,6 +18,7 @@ from diurnix.events import (
 from diurnix.executor import ExecutionReceipt, ExecutionStatus, Executor, RetryConfig
 from diurnix.factory import SyntheticBundle, generate_bundle
 from diurnix.persona import Persona
+from diurnix.plans import InputRef, Plan, PlanStep, ValueType
 from diurnix.policy import PolicyAction, PolicyDecision, PolicyEffect, PolicyEngine, PolicyRule
 from diurnix.policy_log import DecisionLog
 from diurnix.randomness import SeededRandom
@@ -38,10 +39,13 @@ __all__ = [
     "Executor",
     "HabitCheckIn",
     "InboxMessage",
+    "InputRef",
     "IntegrityError",
     "PendingApproval",
     "Persona",
     "PersonalEvent",
+    "Plan",
+    "PlanStep",
     "PolicyAction",
     "PolicyDecision",
     "PolicyEffect",
@@ -61,6 +65,7 @@ __all__ = [
     "Usage",
     "UserUtterance",
     "ValidationError",
+    "ValueType",
     "__version__",
     "generate_bundle",
 ]
