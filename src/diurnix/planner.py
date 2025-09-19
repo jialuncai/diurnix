@@ -30,3 +30,17 @@ class DeterministicPlanner:
             steps.append(PlanStep(f"step_{index}", spec.name, {}, {}, {"result": ValueType.ANY}))
         identity = stable_identifier("plan", {"capabilities": list(capabilities)})
         return Plan(identity, tuple(steps))
+
+    def chained_plan(self, capabilities: tuple[str, ...]) -> Plan:
+        from diurnix.plans import InputRef
+
+        base = self.plan(capabilities)
+        steps = []
+        for index, step in enumerate(base.steps):
+            inputs = (
+                {}
+                if index == 0
+                else {"previous": InputRef(f"step_{index - 1}", "result", ValueType.ANY)}
+            )
+            steps.append(PlanStep(step.step_id, step.tool, step.arguments, inputs, step.outputs))
+        return Plan(base.plan_id, tuple(steps))
