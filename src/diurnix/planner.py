@@ -44,3 +44,22 @@ class DeterministicPlanner:
             )
             steps.append(PlanStep(step.step_id, step.tool, step.arguments, inputs, step.outputs))
         return Plan(base.plan_id, tuple(steps))
+
+
+def replace_step_tool(plan: Plan, step_id: str, tool: str) -> Plan:
+    if not any(step.step_id == step_id for step in plan.steps):
+        raise ValidationError(f"unknown plan step: {step_id}")
+    steps = tuple(
+        PlanStep(
+            step.step_id,
+            tool if step.step_id == step_id else step.tool,
+            step.arguments,
+            step.inputs,
+            step.outputs,
+            step.preconditions,
+            step.effects,
+            step.money_budget,
+        )
+        for step in plan.steps
+    )
+    return Plan(plan.plan_id, steps)
