@@ -23,3 +23,13 @@ def test_replanning_rejects_unknown_step() -> None:
     plan = Plan("plan", (PlanStep("a", "old", {}, {}, {"x": ValueType.ANY}),))
     with pytest.raises(ValidationError, match="unknown"):
         replace_step_tool(plan, "missing", "new")
+
+
+def test_observation_violation_preserves_declared_order() -> None:
+    from diurnix.planner import violated_preconditions
+
+    step = PlanStep(
+        "a", "tool", {}, {}, {"x": ValueType.ANY}, preconditions=("online", "approved", "fresh")
+    )
+    assert violated_preconditions(step, ("approved",)) == ("online", "fresh")
+    assert violated_preconditions(step, ("online", "approved", "fresh")) == ()

@@ -63,3 +63,8 @@ def replace_step_tool(plan: Plan, step_id: str, tool: str) -> Plan:
         for step in plan.steps
     )
     return Plan(plan.plan_id, steps)
+
+
+def violated_preconditions(step: PlanStep, observed: tuple[str, ...]) -> tuple[str, ...]:
+    available = set(observed)
+    return tuple(item for item in step.preconditions if item not in available)
