@@ -68,3 +68,26 @@ def replace_step_tool(plan: Plan, step_id: str, tool: str) -> Plan:
 def violated_preconditions(step: PlanStep, observed: tuple[str, ...]) -> tuple[str, ...]:
     available = set(observed)
     return tuple(item for item in step.preconditions if item not in available)
+
+
+def allocate_money_budget(plan: Plan, total: float) -> Plan:
+    if total < 0:
+        raise ValidationError("plan budget cannot be negative")
+    share = round(total / len(plan.steps), 6)
+    remaining = round(total - share * (len(plan.steps) - 1), 6)
+    steps = []
+    for index, step in enumerate(plan.steps):
+        amount = remaining if index == len(plan.steps) - 1 else share
+        steps.append(
+            PlanStep(
+                step.step_id,
+                step.tool,
+                step.arguments,
+                step.inputs,
+                step.outputs,
+                step.preconditions,
+                step.effects,
+                amount,
+            )
+        )
+    return Plan(plan.plan_id, tuple(steps))
