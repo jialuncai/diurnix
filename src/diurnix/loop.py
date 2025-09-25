@@ -43,3 +43,11 @@ def transition(state: LoopState, target: LoopPhase) -> LoopState:
     return LoopState(
         target, state.step_count + (target is LoopPhase.ACT), state.observations, state.stop_reason
     )
+
+
+def perceive(state: LoopState, event: Any) -> LoopState:
+    if state.phase is not LoopPhase.PERCEIVE:
+        raise ValidationError("loop is not perceiving")
+    return LoopState(
+        LoopPhase.PLAN, state.step_count, (*state.observations, event), state.stop_reason
+    )
