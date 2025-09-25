@@ -91,3 +91,16 @@ def allocate_money_budget(plan: Plan, total: float) -> Plan:
             )
         )
     return Plan(plan.plan_id, tuple(steps))
+
+
+def planner_manifest(
+    planner: DeterministicPlanner, capabilities: tuple[str, ...]
+) -> dict[str, object]:
+    from diurnix.plan_codec import plan_manifest
+
+    return {
+        "planner": "deterministic",
+        "planner_version": 1,
+        "capabilities": list(capabilities),
+        "output": plan_manifest(planner.plan(capabilities)),
+    }
