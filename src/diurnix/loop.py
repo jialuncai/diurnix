@@ -83,3 +83,16 @@ def record_action(state: LoopState, receipt: Any) -> LoopState:
         state.plan,
         (*state.receipts, receipt),
     )
+
+
+def observe(state: LoopState, observation: Any) -> LoopState:
+    if state.phase is not LoopPhase.OBSERVE:
+        raise ValidationError("loop is not observing")
+    return LoopState(
+        LoopPhase.PERCEIVE,
+        state.step_count,
+        (*state.observations, observation),
+        state.stop_reason,
+        state.plan,
+        state.receipts,
+    )
