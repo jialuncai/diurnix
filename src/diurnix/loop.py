@@ -96,3 +96,11 @@ def observe(state: LoopState, observation: Any) -> LoopState:
         state.plan,
         state.receipts,
     )
+
+
+def stop_loop(state: LoopState, reason: str) -> LoopState:
+    if not reason.strip():
+        raise ValidationError("loop stop reason must not be blank")
+    return LoopState(
+        LoopPhase.STOPPED, state.step_count, state.observations, reason, state.plan, state.receipts
+    )
