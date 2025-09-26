@@ -33,6 +33,7 @@ class LoopState:
     observations: tuple[Any, ...] = ()
     stop_reason: str | None = None
     plan: Plan | None = None
+    receipts: tuple[Any, ...] = ()
 
 
 def transition(state: LoopState, target: LoopPhase) -> LoopState:
@@ -68,3 +69,17 @@ def attach_plan(state: LoopState, plan: Plan) -> LoopState:
     if state.phase is not LoopPhase.PLAN:
         raise ValidationError("loop is not planning")
     return LoopState(LoopPhase.ACT, state.step_count, state.observations, state.stop_reason, plan)
+
+
+def record_action(state: LoopState, receipt: Any) -> LoopState:
+    """Record one action outcome and advance to observation."""
+    if state.phase is not LoopPhase.ACT:
+        raise ValidationError("loop is not acting")
+    return LoopState(
+        LoopPhase.OBSERVE,
+        state.step_count + 1,
+        state.observations,
+        state.stop_reason,
+        state.plan,
+        (*state.receipts, receipt),
+    )
