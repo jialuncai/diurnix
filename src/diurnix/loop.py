@@ -104,3 +104,9 @@ def stop_loop(state: LoopState, reason: str) -> LoopState:
     return LoopState(
         LoopPhase.STOPPED, state.step_count, state.observations, reason, state.plan, state.receipts
     )
+
+
+def enforce_step_budget(state: LoopState, max_steps: int) -> LoopState:
+    if max_steps < 0:
+        raise ValidationError("max steps cannot be negative")
+    return stop_loop(state, "step budget exhausted") if state.step_count >= max_steps else state
