@@ -45,3 +45,21 @@ def trace_to_dict(trace: LoopTrace) -> dict[str, Any]:
             for e in trace.entries
         ],
     }
+
+
+def trace_from_dict(value: dict[str, Any]) -> LoopTrace:
+    if set(value) != {"schema_version", "entries"} or value.get("schema_version") != 1:
+        raise ValidationError("trace does not match schema")
+    trace = LoopTrace()
+    try:
+        for expected, item in enumerate(value["entries"]):
+            if item["sequence"] != expected:
+                raise ValidationError("trace sequence is not contiguous")
+            trace = trace.append(
+                LoopPhase(item["phase"]),
+                datetime.fromisoformat(item["occurred_at"]),
+                dict(item["payload"]),
+            )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid trace payload") from error
+    return trace

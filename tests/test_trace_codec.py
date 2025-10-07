@@ -12,3 +12,13 @@ def test_trace_mapping_has_stable_entry_shape() -> None:
     encoded = trace_to_dict(trace)
     assert list(encoded["entries"][0]) == ["sequence", "phase", "occurred_at", "payload"]
     assert '"phase":"plan"' in canonical_dumps(encoded)
+
+
+def test_trace_mapping_roundtrips_byte_identically() -> None:
+    from diurnix.traces import trace_from_dict
+
+    trace = LoopTrace().append(LoopPhase.ACT, datetime(2026, 10, 30, tzinfo=UTC), {"call": 1})
+    assert trace_from_dict(trace_to_dict(trace)) == trace
+    assert canonical_dumps(trace_to_dict(trace_from_dict(trace_to_dict(trace)))) == canonical_dumps(
+        trace_to_dict(trace)
+    )
