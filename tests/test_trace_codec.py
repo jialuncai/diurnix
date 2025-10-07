@@ -22,3 +22,16 @@ def test_trace_mapping_roundtrips_byte_identically() -> None:
     assert canonical_dumps(trace_to_dict(trace_from_dict(trace_to_dict(trace)))) == canonical_dumps(
         trace_to_dict(trace)
     )
+
+
+def test_trace_decoder_rejects_sequence_gap() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.traces import trace_from_dict
+
+    trace = LoopTrace().append(LoopPhase.ACT, datetime(2026, 10, 30, tzinfo=UTC), {})
+    encoded = trace_to_dict(trace)
+    encoded["entries"][0]["sequence"] = 2
+    with pytest.raises(ValidationError, match="contiguous"):
+        trace_from_dict(encoded)
