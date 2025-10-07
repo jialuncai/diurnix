@@ -63,3 +63,16 @@ def trace_from_dict(value: dict[str, Any]) -> LoopTrace:
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError("invalid trace payload") from error
     return trace
+
+
+def trace_manifest(trace: LoopTrace) -> dict[str, Any]:
+    from diurnix.integrity import content_checksum
+
+    encoded = trace_to_dict(trace)
+    return {
+        "kind": "loop.trace",
+        "schema_version": 1,
+        "entry_count": len(trace.entries),
+        "checksum": content_checksum(encoded),
+        "trace": encoded,
+    }
