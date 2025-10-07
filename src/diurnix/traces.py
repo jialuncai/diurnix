@@ -30,3 +30,18 @@ class LoopTrace:
 
     def append(self, phase: LoopPhase, at: datetime, payload: dict[str, Any]) -> LoopTrace:
         return LoopTrace((*self.entries, TraceEntry(len(self.entries), phase, at, dict(payload))))
+
+
+def trace_to_dict(trace: LoopTrace) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "entries": [
+            {
+                "sequence": e.sequence,
+                "phase": e.phase.value,
+                "occurred_at": e.occurred_at.isoformat(),
+                "payload": e.payload,
+            }
+            for e in trace.entries
+        ],
+    }
