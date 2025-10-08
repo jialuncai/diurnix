@@ -35,3 +35,9 @@ def commit(action: PreparedAction) -> PreparedAction:
     if action.status is not CommitStatus.PREPARED:
         raise ValidationError("only prepared action can commit")
     return replace(action, status=CommitStatus.COMMITTED)
+
+
+def abort(action: PreparedAction) -> PreparedAction:
+    if action.status is CommitStatus.COMMITTED:
+        raise ValidationError("committed action cannot abort")
+    return replace(action, status=CommitStatus.ABORTED)
