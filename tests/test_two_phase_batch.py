@@ -19,3 +19,13 @@ def test_two_phase_batch_rejects_duplicate_identity() -> None:
     action = PreparedAction(ToolCall("same", "mail.send", {}))
     with pytest.raises(ValidationError, match="unique"):
         prepare_batch((action, action))
+
+
+def test_commit_batch_rejects_mixed_state_without_changes() -> None:
+    from diurnix.transactions import prepare
+
+    fresh = PreparedAction(ToolCall("call_1", "mail.send", {}))
+    prepared = prepare(PreparedAction(ToolCall("call_2", "mail.send", {})), "token")
+    with pytest.raises(ValidationError, match="fully prepared"):
+        commit_batch((fresh, prepared))
+    assert fresh.status is CommitStatus.NEW and prepared.status is CommitStatus.PREPARED
