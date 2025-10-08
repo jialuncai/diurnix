@@ -41,3 +41,15 @@ def abort(action: PreparedAction) -> PreparedAction:
     if action.status is CommitStatus.COMMITTED:
         raise ValidationError("committed action cannot abort")
     return replace(action, status=CommitStatus.ABORTED)
+
+
+def prepare_batch(actions: tuple[PreparedAction, ...]) -> tuple[PreparedAction, ...]:
+    if len({action.call.call_id for action in actions}) != len(actions):
+        raise ValidationError("batch call IDs must be unique")
+    return tuple(prepare(action, f"prepare:{action.call.call_id}") for action in actions)
+
+
+def commit_batch(actions: tuple[PreparedAction, ...]) -> tuple[PreparedAction, ...]:
+    if any(action.status is not CommitStatus.PREPARED for action in actions):
+        raise ValidationError("batch is not fully prepared")
+    return tuple(commit(action) for action in actions)
