@@ -29,3 +29,9 @@ def prepare(action: PreparedAction, token: str) -> PreparedAction:
     if not token:
         raise ValidationError("prepare token must not be empty")
     return replace(action, status=CommitStatus.PREPARED, token=token)
+
+
+def commit(action: PreparedAction) -> PreparedAction:
+    if action.status is not CommitStatus.PREPARED:
+        raise ValidationError("only prepared action can commit")
+    return replace(action, status=CommitStatus.COMMITTED)

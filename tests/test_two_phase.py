@@ -17,3 +17,12 @@ def test_prepare_returns_tokenized_copy() -> None:
 def test_prepare_rejects_empty_token() -> None:
     with pytest.raises(ValidationError, match="token"):
         prepare(PreparedAction(ToolCall("call_1", "mail.send", {})), "")
+
+
+def test_commit_accepts_only_prepared_action() -> None:
+    from diurnix.transactions import commit
+
+    prepared = prepare(PreparedAction(ToolCall("call_1", "mail.send", {})), "token")
+    assert commit(prepared).status is CommitStatus.COMMITTED
+    with pytest.raises(ValidationError, match="only prepared"):
+        commit(PreparedAction(ToolCall("call_2", "mail.send", {})))
