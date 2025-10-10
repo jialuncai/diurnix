@@ -17,6 +17,7 @@ from diurnix.events import (
 )
 from diurnix.executor import ExecutionReceipt, ExecutionStatus, Executor, RetryConfig
 from diurnix.factory import SyntheticBundle, generate_bundle
+from diurnix.loop import LoopPhase, LoopState
 from diurnix.persona import Persona
 from diurnix.plans import InputRef, Plan, PlanStep, ValueType
 from diurnix.policy import PolicyAction, PolicyDecision, PolicyEffect, PolicyEngine, PolicyRule
@@ -25,6 +26,7 @@ from diurnix.randomness import SeededRandom
 from diurnix.registry import ToolRegistry
 from diurnix.tool_calls import ToolCall, ToolResult
 from diurnix.tools import SideEffect, ToolSpec
+from diurnix.traces import LoopTrace, TraceEntry
 
 __all__ = [
     "ApprovalQueue",
@@ -41,6 +43,9 @@ __all__ = [
     "InboxMessage",
     "InputRef",
     "IntegrityError",
+    "LoopPhase",
+    "LoopState",
+    "LoopTrace",
     "PendingApproval",
     "Persona",
     "PersonalEvent",
@@ -61,6 +66,7 @@ __all__ = [
     "ToolRegistry",
     "ToolResult",
     "ToolSpec",
+    "TraceEntry",
     "Transaction",
     "Usage",
     "UserUtterance",
