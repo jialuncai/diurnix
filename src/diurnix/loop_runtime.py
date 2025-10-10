@@ -23,3 +23,16 @@ def consume(loop: BudgetedLoop, requested: Usage) -> BudgetedLoop:
             stop_loop(loop.state, "resource budget exhausted"), loop.budget, loop.usage
         )
     return BudgetedLoop(loop.state, loop.budget, updated)
+
+
+def run_cycle(
+    state: LoopState, event: object, plan: object, receipt: object, observation: object
+) -> LoopState:
+    from diurnix.loop import attach_plan, observe, perceive, record_action
+    from diurnix.plans import Plan
+
+    if not isinstance(plan, Plan):
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("loop cycle requires a plan")
+    return observe(record_action(attach_plan(perceive(state, event), plan), receipt), observation)
