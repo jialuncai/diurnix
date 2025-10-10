@@ -36,3 +36,14 @@ def run_cycle(
 
         raise ValidationError("loop cycle requires a plan")
     return observe(record_action(attach_plan(perceive(state, event), plan), receipt), observation)
+
+
+def apply_receipt_stop(state: LoopState, status: str) -> LoopState:
+    terminal = {
+        "denied": "policy denied",
+        "pending": "approval pending",
+        "cancelled": "cancelled",
+        "timed_out": "timed out",
+        "failed": "tool failed",
+    }
+    return stop_loop(state, terminal[status]) if status in terminal else state
