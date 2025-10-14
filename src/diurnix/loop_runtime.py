@@ -47,3 +47,26 @@ def apply_receipt_stop(state: LoopState, status: str) -> LoopState:
         "failed": "tool failed",
     }
     return stop_loop(state, terminal[status]) if status in terminal else state
+
+
+def loop_checkpoint(loop: BudgetedLoop) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "state": {
+            "phase": loop.state.phase.value,
+            "step_count": loop.state.step_count,
+            "observations": list(loop.state.observations),
+            "stop_reason": loop.state.stop_reason,
+            "receipts": list(loop.state.receipts),
+        },
+        "budget": {
+            "max_steps": loop.budget.max_steps,
+            "max_wall_seconds": loop.budget.max_wall_seconds,
+            "max_money": loop.budget.max_money,
+        },
+        "usage": {
+            "steps": loop.usage.steps,
+            "wall_seconds": loop.usage.wall_seconds,
+            "money": loop.usage.money,
+        },
+    }
