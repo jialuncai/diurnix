@@ -70,3 +70,33 @@ def loop_checkpoint(loop: BudgetedLoop) -> dict[str, object]:
             "money": loop.usage.money,
         },
     }
+
+
+def loop_from_checkpoint(value: dict[str, object]) -> BudgetedLoop:
+    from diurnix.errors import ValidationError
+    from diurnix.loop import LoopPhase
+
+    if (
+        set(value) != {"schema_version", "state", "budget", "usage"}
+        or value.get("schema_version") != 1
+    ):
+        raise ValidationError("loop checkpoint does not match schema")
+    try:
+        s = value["state"]
+        b = value["budget"]
+        u = value["usage"]
+        state = LoopState(
+            LoopPhase(s["phase"]),
+            s["step_count"],
+            tuple(s["observations"]),
+            s["stop_reason"],
+            None,
+            tuple(s["receipts"]),
+        )
+        return BudgetedLoop(
+            state,
+            Budget(b["max_steps"], b["max_wall_seconds"], b["max_money"]),
+            Usage(u["steps"], u["wall_seconds"], u["money"]),
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid loop checkpoint payload") from error
