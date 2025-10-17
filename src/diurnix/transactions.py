@@ -64,3 +64,16 @@ def action_to_dict(action: PreparedAction) -> dict[str, object]:
         "status": action.status.value,
         "token": action.token,
     }
+
+
+def transaction_manifest(actions: tuple[PreparedAction, ...]) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    encoded = [action_to_dict(action) for action in actions]
+    return {
+        "kind": "two_phase.batch",
+        "schema_version": 1,
+        "action_count": len(actions),
+        "checksum": content_checksum(encoded),
+        "actions": encoded,
+    }
