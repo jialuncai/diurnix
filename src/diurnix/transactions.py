@@ -53,3 +53,14 @@ def commit_batch(actions: tuple[PreparedAction, ...]) -> tuple[PreparedAction, .
     if any(action.status is not CommitStatus.PREPARED for action in actions):
         raise ValidationError("batch is not fully prepared")
     return tuple(commit(action) for action in actions)
+
+
+def action_to_dict(action: PreparedAction) -> dict[str, object]:
+    from diurnix.tool_calls import tool_call_to_dict
+
+    return {
+        "schema_version": 1,
+        "call": tool_call_to_dict(action.call),
+        "status": action.status.value,
+        "token": action.token,
+    }
