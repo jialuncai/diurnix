@@ -16,3 +16,10 @@ def test_keyword_counts_keep_all_intent_classes() -> None:
 
     counts = keyword_counts("回复邮件并查看 budget")
     assert list(counts) == list(Intent) and counts[Intent.INBOX] == 2 and counts[Intent.LEDGER] == 1
+
+
+def test_recurrence_score_is_bounded_and_multilingual() -> None:
+    from diurnix.router import recurrence_score
+
+    assert recurrence_score("每天 routine weekly") == 1.0
+    assert recurrence_score("one time") == 0.0

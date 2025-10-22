@@ -34,3 +34,8 @@ def keyword_counts(text: str) -> dict[Intent, int]:
     return {
         intent: sum(lowered.count(word) for word in words) for intent, words in _KEYWORDS.items()
     }
+
+
+def recurrence_score(text: str) -> float:
+    cues = ("每天", "每周", "daily", "weekly", "routine", "习惯")
+    return round(min(1.0, sum(cue in text.casefold() for cue in cues) / 2), 6)
