@@ -39,3 +39,9 @@ def keyword_counts(text: str) -> dict[Intent, int]:
 def recurrence_score(text: str) -> float:
     cues = ("每天", "每周", "daily", "weekly", "routine", "习惯")
     return round(min(1.0, sum(cue in text.casefold() for cue in cues) / 2), 6)
+
+
+def priority_score(text: str) -> float:
+    lowered = text.casefold()
+    weights = (("urgent", 1.0), ("紧急", 1.0), ("today", 0.5), ("今天", 0.5), ("!", 0.1))
+    return round(min(1.0, sum(weight for cue, weight in weights if cue in lowered)), 6)

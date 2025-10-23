@@ -23,3 +23,11 @@ def test_recurrence_score_is_bounded_and_multilingual() -> None:
 
     assert recurrence_score("每天 routine weekly") == 1.0
     assert recurrence_score("one time") == 0.0
+
+
+def test_priority_score_caps_weighted_cues() -> None:
+    from diurnix.router import priority_score
+
+    assert priority_score("urgent today!") == 1.0
+    assert priority_score("今天处理") == 0.5
+    assert priority_score("later") == 0.0
