@@ -99,3 +99,13 @@ class NumpyRouter:
         ordered = sorted(scores, key=lambda item: (-scores[item], item.value))
         gap = scores[ordered[0]] - scores[ordered[1]]
         return RouteResult(ordered[0], scores, gap <= self.ambiguity_band)
+
+
+def route_probabilities(result: RouteResult) -> dict[Intent, float]:
+    values = np.asarray([result.scores[intent] for intent in Intent], dtype=np.float64)
+    shifted = values - values.max()
+    exp = np.exp(shifted)
+    probs = exp / exp.sum()
+    rounded = [round(float(item), 6) for item in probs]
+    rounded[-1] = round(rounded[-1] + (1 - sum(rounded)), 6)
+    return dict(zip(Intent, rounded, strict=True))
