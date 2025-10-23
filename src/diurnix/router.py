@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from enum import StrEnum
 
 _TOKEN = re.compile(r"[A-Za-z0-9]+|[\u4e00-\u9fff]")
@@ -45,3 +46,26 @@ def priority_score(text: str) -> float:
     lowered = text.casefold()
     weights = (("urgent", 1.0), ("紧急", 1.0), ("today", 0.5), ("今天", 0.5), ("!", 0.1))
     return round(min(1.0, sum(weight for cue, weight in weights if cue in lowered)), 6)
+
+
+@dataclass(frozen=True, slots=True)
+class FeatureVector:
+    values: tuple[float, ...]
+    names: tuple[str, ...]
+
+
+def extract_features(text: str) -> FeatureVector:
+    counts = keyword_counts(text)
+    names = (
+        *(f"keyword.{intent.value}" for intent in Intent),
+        "recurrence",
+        "priority",
+        "token_count",
+    )
+    values = (
+        *(float(counts[intent]) for intent in Intent),
+        recurrence_score(text),
+        priority_score(text),
+        float(len(tokenize(text))),
+    )
+    return FeatureVector(values, names)
