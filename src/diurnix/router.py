@@ -109,3 +109,7 @@ def route_probabilities(result: RouteResult) -> dict[Intent, float]:
     rounded = [round(float(item), 6) for item in probs]
     rounded[-1] = round(rounded[-1] + (1 - sum(rounded)), 6)
     return dict(zip(Intent, rounded, strict=True))
+
+
+def route_requires_approval(result: RouteResult) -> bool:
+    return result.ambiguous
