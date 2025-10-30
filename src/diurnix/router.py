@@ -153,3 +153,12 @@ def evaluate_router(
         "ambiguous_count": sum(router.route(text).ambiguous for text, _ in items),
         "synthetic": True,
     }
+
+
+def route_to_dict(result: RouteResult) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "intent": result.intent.value,
+        "scores": {intent.value: result.scores[intent] for intent in Intent},
+        "ambiguous": result.ambiguous,
+    }
