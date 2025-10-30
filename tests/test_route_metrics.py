@@ -13,3 +13,11 @@ def test_routing_accuracy_uses_planted_labels() -> None:
 def test_routing_accuracy_rejects_length_mismatch() -> None:
     with pytest.raises(ValueError, match="lengths differ"):
         routing_accuracy((Intent.INBOX,), ())
+
+
+def test_routing_slices_keep_zero_count_classes() -> None:
+    from diurnix.router import routing_slices
+
+    slices = routing_slices((Intent.INBOX,), (Intent.INBOX,))
+    assert slices["inbox"] == {"count": 1, "accuracy": 1.0}
+    assert slices["habits"] == {"count": 0, "accuracy": 0.0}

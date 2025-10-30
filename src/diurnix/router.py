@@ -123,3 +123,19 @@ def routing_accuracy(predicted: tuple[Intent, ...], truth: tuple[Intent, ...]) -
     return round(
         sum(left is right for left, right in zip(predicted, truth, strict=True)) / len(truth), 6
     )
+
+
+def routing_slices(
+    predicted: tuple[Intent, ...], truth: tuple[Intent, ...]
+) -> dict[str, dict[str, float | int]]:
+    if len(predicted) != len(truth):
+        raise ValueError("routing lengths differ")
+    result = {}
+    for intent in Intent:
+        indices = [i for i, label in enumerate(truth) if label is intent]
+        correct = sum(predicted[i] is intent for i in indices)
+        result[intent.value] = {
+            "count": len(indices),
+            "accuracy": round(correct / len(indices), 6) if indices else 0.0,
+        }
+    return result
