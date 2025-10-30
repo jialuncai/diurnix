@@ -113,3 +113,13 @@ def route_probabilities(result: RouteResult) -> dict[Intent, float]:
 
 def route_requires_approval(result: RouteResult) -> bool:
     return result.ambiguous
+
+
+def routing_accuracy(predicted: tuple[Intent, ...], truth: tuple[Intent, ...]) -> float:
+    if len(predicted) != len(truth):
+        raise ValueError("routing lengths differ")
+    if not truth:
+        return 0.0
+    return round(
+        sum(left is right for left, right in zip(predicted, truth, strict=True)) / len(truth), 6
+    )
