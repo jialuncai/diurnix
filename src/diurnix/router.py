@@ -162,3 +162,15 @@ def route_to_dict(result: RouteResult) -> dict[str, object]:
         "scores": {intent.value: result.scores[intent] for intent in Intent},
         "ambiguous": result.ambiguous,
     }
+
+
+def route_from_dict(value: dict[str, object]) -> RouteResult:
+    if (
+        set(value) != {"schema_version", "intent", "scores", "ambiguous"}
+        or value.get("schema_version") != 1
+    ):
+        raise ValueError("route does not match schema")
+    scores = {Intent(key): float(score) for key, score in value["scores"].items()}  # type: ignore[union-attr]
+    if set(scores) != set(Intent):
+        raise ValueError("route scores are incomplete")
+    return RouteResult(Intent(value["intent"]), scores, bool(value["ambiguous"]))  # type: ignore[arg-type]
