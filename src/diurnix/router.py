@@ -139,3 +139,17 @@ def routing_slices(
             "accuracy": round(correct / len(indices), 6) if indices else 0.0,
         }
     return result
+
+
+def evaluate_router(
+    router: NumpyRouter, items: tuple[tuple[str, Intent], ...]
+) -> dict[str, object]:
+    predicted = tuple(router.route(text).intent for text, _ in items)
+    truth = tuple(label for _, label in items)
+    return {
+        "sample_count": len(items),
+        "accuracy": routing_accuracy(predicted, truth),
+        "slices": routing_slices(predicted, truth),
+        "ambiguous_count": sum(router.route(text).ambiguous for text, _ in items),
+        "synthetic": True,
+    }
