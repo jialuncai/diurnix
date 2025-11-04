@@ -24,6 +24,7 @@ from diurnix.policy import PolicyAction, PolicyDecision, PolicyEffect, PolicyEng
 from diurnix.policy_log import DecisionLog
 from diurnix.randomness import SeededRandom
 from diurnix.registry import ToolRegistry
+from diurnix.router import Intent, NumpyRouter, RouteResult
 from diurnix.tool_calls import ToolCall, ToolResult
 from diurnix.tools import SideEffect, ToolSpec
 from diurnix.traces import LoopTrace, TraceEntry
@@ -43,9 +44,11 @@ __all__ = [
     "InboxMessage",
     "InputRef",
     "IntegrityError",
+    "Intent",
     "LoopPhase",
     "LoopState",
     "LoopTrace",
+    "NumpyRouter",
     "PendingApproval",
     "Persona",
     "PersonalEvent",
@@ -57,6 +60,7 @@ __all__ = [
     "PolicyEngine",
     "PolicyRule",
     "RetryConfig",
+    "RouteResult",
     "SeededRandom",
     "SideEffect",
     "SyntheticBundle",
