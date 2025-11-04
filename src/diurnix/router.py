@@ -174,3 +174,16 @@ def route_from_dict(value: dict[str, object]) -> RouteResult:
     if set(scores) != set(Intent):
         raise ValueError("route scores are incomplete")
     return RouteResult(Intent(value["intent"]), scores, bool(value["ambiguous"]))  # type: ignore[arg-type]
+
+
+def router_manifest(report: dict[str, object], seed: int) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    return {
+        "kind": "router.evaluation",
+        "schema_version": 1,
+        "seed": seed,
+        "synthetic": True,
+        "checksum": content_checksum(report),
+        "report": report,
+    }
