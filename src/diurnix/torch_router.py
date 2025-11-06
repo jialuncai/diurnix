@@ -27,3 +27,27 @@ class TorchRouter(torch.nn.Module):
         ordered = sorted(scores, key=lambda item: (-scores[item], item.value))
         gap = scores[ordered[0]] - scores[ordered[1]]
         return RouteResult(ordered[0], scores, gap <= self.ambiguity_band)
+
+
+def train_synthetic_router(
+    items: tuple[tuple[str, Intent], ...], *, seed: int = 0, epochs: int = 30
+) -> tuple[TorchRouter, tuple[float, ...]]:
+    if not items:
+        raise ValueError("training items cannot be empty")
+    if epochs < 1:
+        raise ValueError("epochs must be positive")
+    model = TorchRouter(seed=seed)
+    features = torch.tensor(
+        [extract_features(text).values for text, _ in items], dtype=torch.float32
+    )
+    labels = torch.tensor([list(Intent).index(intent) for _, intent in items], dtype=torch.long)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.08)
+    loss_function = torch.nn.CrossEntropyLoss()
+    losses = []
+    for _ in range(epochs):
+        optimizer.zero_grad()
+        loss = loss_function(model(features), labels)
+        loss.backward()
+        optimizer.step()
+        losses.append(round(float(loss.detach()), 6))
+    return model, tuple(losses)
