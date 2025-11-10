@@ -75,3 +75,20 @@ def restore_router_weights(value: dict[str, object]) -> TorchRouter:
         model.linear.weight.copy_(weight)
         model.linear.bias.copy_(bias)
     return model
+
+
+def compare_with_numpy(
+    torch_router: TorchRouter, items: tuple[tuple[str, Intent], ...]
+) -> dict[str, object]:
+    from diurnix.router import NumpyRouter, routing_accuracy
+
+    truth = tuple(label for _, label in items)
+    numpy_predictions = tuple(NumpyRouter().route(text).intent for text, _ in items)
+    torch_predictions = tuple(torch_router.route(text).intent for text, _ in items)
+    return {
+        "schema_version": 1,
+        "sample_count": len(items),
+        "synthetic": True,
+        "numpy_accuracy": routing_accuracy(numpy_predictions, truth),
+        "torch_accuracy": routing_accuracy(torch_predictions, truth),
+    }
