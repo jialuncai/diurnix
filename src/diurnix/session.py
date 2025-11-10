@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from diurnix.codec import canonical_dumps
 from diurnix.errors import ValidationError
 from diurnix.integrity import content_checksum, verify_content
 
@@ -57,3 +58,27 @@ def session_entry_from_dict(value: dict[str, Any]) -> SessionEntry:
         str(value["checksum"]),
     )
     return entry
+
+
+class SessionRecorder:
+    def __init__(self, entries: tuple[SessionEntry, ...] = ()) -> None:
+        if any(entry.sequence != index for index, entry in enumerate(entries)):
+            raise ValidationError("session entries must have contiguous sequences")
+        self._entries = list(entries)
+
+    @property
+    def entries(self) -> tuple[SessionEntry, ...]:
+        return tuple(self._entries)
+
+    def append(self, kind: str, recorded_at: str, payload: dict[str, Any]) -> SessionEntry:
+        entry = make_session_entry(len(self._entries), kind, recorded_at, payload)
+        self._entries.append(entry)
+        return entry
+
+    def to_jsonl_bytes(self) -> bytes:
+        if not self._entries:
+            return b""
+        text = "".join(
+            canonical_dumps(session_entry_to_dict(entry)) + "\n" for entry in self._entries
+        )
+        return text.encode("utf-8")
