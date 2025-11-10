@@ -51,3 +51,27 @@ def train_synthetic_router(
         optimizer.step()
         losses.append(round(float(loss.detach()), 6))
     return model, tuple(losses)
+
+
+def export_router_weights(model: TorchRouter) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "weight": [[round(float(value), 8) for value in row] for row in model.linear.weight],
+        "bias": [round(float(value), 8) for value in model.linear.bias],
+        "ambiguity_band": model.ambiguity_band,
+        "synthetic_only": True,
+    }
+
+
+def restore_router_weights(value: dict[str, object]) -> TorchRouter:
+    if value.get("schema_version") != 1 or value.get("synthetic_only") is not True:
+        raise ValueError("unsupported Torch router checkpoint")
+    model = TorchRouter(ambiguity_band=float(value["ambiguity_band"]))
+    weight = torch.tensor(value["weight"], dtype=torch.float32)
+    bias = torch.tensor(value["bias"], dtype=torch.float32)
+    if weight.shape != model.linear.weight.shape or bias.shape != model.linear.bias.shape:
+        raise ValueError("Torch router checkpoint shape mismatch")
+    with torch.no_grad():
+        model.linear.weight.copy_(weight)
+        model.linear.bias.copy_(bias)
+    return model
