@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from diurnix.codec import canonical_dumps
-from diurnix.errors import ValidationError
+from diurnix.codec import canonical_dumps, canonical_loads
+from diurnix.errors import IntegrityError, ValidationError
 from diurnix.integrity import content_checksum, verify_content
 
 
@@ -82,3 +82,20 @@ class SessionRecorder:
             canonical_dumps(session_entry_to_dict(entry)) + "\n" for entry in self._entries
         )
         return text.encode("utf-8")
+
+
+def recorder_from_jsonl_bytes(content: bytes) -> SessionRecorder:
+    if not content:
+        return SessionRecorder()
+    if not content.endswith(b"\n"):
+        raise ValidationError("session JSONL must end with newline")
+    entries = []
+    for line_number, raw in enumerate(content.splitlines(), start=1):
+        try:
+            value = canonical_loads(raw.decode("utf-8"))
+            if not isinstance(value, dict):
+                raise ValidationError("session JSONL row must be an object")
+            entries.append(session_entry_from_dict(value))
+        except (UnicodeDecodeError, ValidationError, IntegrityError) as error:
+            raise ValidationError(f"invalid session JSONL line {line_number}: {error}") from error
+    return SessionRecorder(tuple(entries))
