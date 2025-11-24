@@ -7,7 +7,7 @@ from typing import Any
 
 from diurnix.codec import canonical_dumps, canonical_loads
 from diurnix.errors import IntegrityError, ValidationError
-from diurnix.integrity import content_checksum, verify_content
+from diurnix.integrity import bytes_checksum, content_checksum, verify_content
 
 
 @dataclass(frozen=True, slots=True)
@@ -133,3 +133,32 @@ def diff_sessions(
         if left_checksum != right_checksum:
             differences.append(SessionDifference(index, left_checksum, right_checksum))
     return tuple(differences)
+
+
+@dataclass(frozen=True, slots=True)
+class SessionCheckpoint:
+    next_sequence: int
+    stream_checksum: str
+
+
+def checkpoint_session(recorder: SessionRecorder) -> SessionCheckpoint:
+    content = recorder.to_jsonl_bytes()
+    return SessionCheckpoint(len(recorder.entries), bytes_checksum(content))
+
+
+def resume_session(content: bytes, checkpoint: SessionCheckpoint) -> SessionRecorder:
+    actual_checksum = bytes_checksum(content)
+    if actual_checksum != checkpoint.stream_checksum:
+        raise IntegrityError(
+            "session checkpoint stream checksum mismatch",
+            expected=checkpoint.stream_checksum,
+            actual=actual_checksum,
+        )
+    recorder = recorder_from_jsonl_bytes(content)
+    if len(recorder.entries) != checkpoint.next_sequence:
+        raise IntegrityError(
+            "session checkpoint sequence mismatch",
+            expected=str(checkpoint.next_sequence),
+            actual=str(len(recorder.entries)),
+        )
+    return recorder
