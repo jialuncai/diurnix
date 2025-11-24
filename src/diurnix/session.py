@@ -99,3 +99,18 @@ def recorder_from_jsonl_bytes(content: bytes) -> SessionRecorder:
         except (UnicodeDecodeError, ValidationError, IntegrityError) as error:
             raise ValidationError(f"invalid session JSONL line {line_number}: {error}") from error
     return SessionRecorder(tuple(entries))
+
+
+class SessionReplayer:
+    def __init__(self, entries: tuple[SessionEntry, ...]) -> None:
+        SessionRecorder(entries)
+        self.entries = entries
+
+    def replay(self, reducer: Any, initial: Any) -> Any:
+        state = initial
+        for entry in self.entries:
+            state = reducer(state, entry)
+        return state
+
+    def replay_bytes(self) -> bytes:
+        return SessionRecorder(self.entries).to_jsonl_bytes()
