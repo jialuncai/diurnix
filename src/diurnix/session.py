@@ -114,3 +114,22 @@ class SessionReplayer:
 
     def replay_bytes(self) -> bytes:
         return SessionRecorder(self.entries).to_jsonl_bytes()
+
+
+@dataclass(frozen=True, slots=True)
+class SessionDifference:
+    sequence: int
+    left_checksum: str | None
+    right_checksum: str | None
+
+
+def diff_sessions(
+    left: tuple[SessionEntry, ...], right: tuple[SessionEntry, ...]
+) -> tuple[SessionDifference, ...]:
+    differences = []
+    for index in range(max(len(left), len(right))):
+        left_checksum = left[index].checksum if index < len(left) else None
+        right_checksum = right[index].checksum if index < len(right) else None
+        if left_checksum != right_checksum:
+            differences.append(SessionDifference(index, left_checksum, right_checksum))
+    return tuple(differences)
