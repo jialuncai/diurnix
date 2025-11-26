@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
@@ -185,3 +186,20 @@ class SessionFileRecorder:
             stream.write(line)
             stream.flush()
         return entry
+
+
+class SessionRecordKind(StrEnum):
+    EVENT = "event.input"
+    DECISION = "decision.policy"
+    RECEIPT = "receipt.tool"
+    OBSERVATION = "observation.tool"
+    CHECKPOINT = "checkpoint.runtime"
+
+
+def record_session_item(
+    recorder: SessionRecorder,
+    kind: SessionRecordKind,
+    recorded_at: str,
+    payload: dict[str, Any],
+) -> SessionEntry:
+    return recorder.append(kind.value, recorded_at, payload)
