@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from diurnix.codec import canonical_dumps, canonical_loads
@@ -162,3 +163,25 @@ def resume_session(content: bytes, checkpoint: SessionCheckpoint) -> SessionReco
             actual=str(len(recorder.entries)),
         )
     return recorder
+
+
+class SessionFileRecorder:
+    """Append canonical records without rewriting prior session bytes."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        content = path.read_bytes() if path.exists() else b""
+        self._recorder = recorder_from_jsonl_bytes(content)
+
+    @property
+    def entries(self) -> tuple[SessionEntry, ...]:
+        return self._recorder.entries
+
+    def append(self, kind: str, recorded_at: str, payload: dict[str, Any]) -> SessionEntry:
+        entry = self._recorder.append(kind, recorded_at, payload)
+        line = (canonical_dumps(session_entry_to_dict(entry)) + "\n").encode("utf-8")
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open("ab") as stream:
+            stream.write(line)
+            stream.flush()
+        return entry
