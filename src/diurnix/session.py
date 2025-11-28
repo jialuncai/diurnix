@@ -250,3 +250,23 @@ def checkpoint_from_dict(value: dict[str, Any]) -> SessionCheckpoint:
     if next_sequence < 0:
         raise ValidationError("checkpoint sequence cannot be negative")
     return SessionCheckpoint(next_sequence, str(value["stream_checksum"]))
+
+
+def difference_to_dict(difference: SessionDifference) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "sequence": difference.sequence,
+        "left_checksum": difference.left_checksum,
+        "right_checksum": difference.right_checksum,
+    }
+
+
+def difference_from_dict(value: dict[str, Any]) -> SessionDifference:
+    expected = {"schema_version", "sequence", "left_checksum", "right_checksum"}
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("session difference does not match schema")
+    return SessionDifference(
+        int(value["sequence"]),
+        None if value["left_checksum"] is None else str(value["left_checksum"]),
+        None if value["right_checksum"] is None else str(value["right_checksum"]),
+    )
