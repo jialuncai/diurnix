@@ -203,3 +203,19 @@ def record_session_item(
     payload: dict[str, Any],
 ) -> SessionEntry:
     return recorder.append(kind.value, recorded_at, payload)
+
+
+def query_session(
+    entries: tuple[SessionEntry, ...],
+    *,
+    kind_prefix: str | None = None,
+    start: int = 0,
+    stop: int | None = None,
+) -> tuple[SessionEntry, ...]:
+    if start < 0 or (stop is not None and stop < start):
+        raise ValidationError("invalid session query range")
+    upper = len(entries) if stop is None else min(stop, len(entries))
+    selected = entries[start:upper]
+    if kind_prefix is not None:
+        selected = tuple(entry for entry in selected if entry.kind.startswith(kind_prefix))
+    return selected
