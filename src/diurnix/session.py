@@ -219,3 +219,15 @@ def query_session(
     if kind_prefix is not None:
         selected = tuple(entry for entry in selected if entry.kind.startswith(kind_prefix))
     return selected
+
+
+def session_manifest(entries: tuple[SessionEntry, ...], seed: int) -> dict[str, Any]:
+    content = SessionRecorder(entries).to_jsonl_bytes()
+    return {
+        "kind": "session.recording",
+        "schema_version": 1,
+        "seed": seed,
+        "entry_count": len(entries),
+        "stream_checksum": bytes_checksum(content),
+        "synthetic": True,
+    }
