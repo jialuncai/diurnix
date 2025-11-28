@@ -231,3 +231,22 @@ def session_manifest(entries: tuple[SessionEntry, ...], seed: int) -> dict[str, 
         "stream_checksum": bytes_checksum(content),
         "synthetic": True,
     }
+
+
+def checkpoint_to_dict(checkpoint: SessionCheckpoint) -> dict[str, Any]:
+    return {
+        "schema_version": 1,
+        "next_sequence": checkpoint.next_sequence,
+        "stream_checksum": checkpoint.stream_checksum,
+    }
+
+
+def checkpoint_from_dict(value: dict[str, Any]) -> SessionCheckpoint:
+    if set(value) != {"schema_version", "next_sequence", "stream_checksum"}:
+        raise ValidationError("session checkpoint does not match schema")
+    if value.get("schema_version") != 1:
+        raise ValidationError("unsupported session checkpoint schema")
+    next_sequence = int(value["next_sequence"])
+    if next_sequence < 0:
+        raise ValidationError("checkpoint sequence cannot be negative")
+    return SessionCheckpoint(next_sequence, str(value["stream_checksum"]))
