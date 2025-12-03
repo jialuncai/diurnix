@@ -289,3 +289,21 @@ def fork_session(entries: tuple[SessionEntry, ...], next_sequence: int) -> Sessi
     if next_sequence < 0 or next_sequence > len(entries):
         raise ValidationError("session fork boundary is out of range")
     return SessionRecorder(entries[:next_sequence])
+
+
+def record_loop_state(recorder: SessionRecorder, recorded_at: str, state: Any) -> SessionEntry:
+    from diurnix.loop import LoopState
+
+    if not isinstance(state, LoopState):
+        raise ValidationError("session loop state has wrong type")
+    return recorder.append(
+        "checkpoint.loop",
+        recorded_at,
+        {
+            "phase": state.phase.value,
+            "step_count": state.step_count,
+            "observation_count": len(state.observations),
+            "receipt_count": len(state.receipts),
+            "stop_reason": state.stop_reason,
+        },
+    )
