@@ -270,3 +270,16 @@ def difference_from_dict(value: dict[str, Any]) -> SessionDifference:
         None if value["left_checksum"] is None else str(value["left_checksum"]),
         None if value["right_checksum"] is None else str(value["right_checksum"]),
     )
+
+
+def summarize_session(entries: tuple[SessionEntry, ...]) -> dict[str, Any]:
+    counts: dict[str, int] = {}
+    for entry in entries:
+        namespace = entry.kind.split(".", maxsplit=1)[0]
+        counts[namespace] = counts.get(namespace, 0) + 1
+    return {
+        "entry_count": len(entries),
+        "kind_counts": dict(sorted(counts.items())),
+        "first_recorded_at": entries[0].recorded_at if entries else None,
+        "last_recorded_at": entries[-1].recorded_at if entries else None,
+    }
