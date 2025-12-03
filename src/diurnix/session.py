@@ -283,3 +283,9 @@ def summarize_session(entries: tuple[SessionEntry, ...]) -> dict[str, Any]:
         "first_recorded_at": entries[0].recorded_at if entries else None,
         "last_recorded_at": entries[-1].recorded_at if entries else None,
     }
+
+
+def fork_session(entries: tuple[SessionEntry, ...], next_sequence: int) -> SessionRecorder:
+    if next_sequence < 0 or next_sequence > len(entries):
+        raise ValidationError("session fork boundary is out of range")
+    return SessionRecorder(entries[:next_sequence])
