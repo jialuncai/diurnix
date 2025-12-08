@@ -25,6 +25,7 @@ from diurnix.policy_log import DecisionLog
 from diurnix.randomness import SeededRandom
 from diurnix.registry import ToolRegistry
 from diurnix.router import Intent, NumpyRouter, RouteResult
+from diurnix.session import SessionEntry, SessionFileRecorder, SessionRecorder, SessionReplayer
 from diurnix.tool_calls import ToolCall, ToolResult
 from diurnix.tools import SideEffect, ToolSpec
 from diurnix.traces import LoopTrace, TraceEntry
@@ -62,6 +63,10 @@ __all__ = [
     "RetryConfig",
     "RouteResult",
     "SeededRandom",
+    "SessionEntry",
+    "SessionFileRecorder",
+    "SessionRecorder",
+    "SessionReplayer",
     "SideEffect",
     "SyntheticBundle",
     "SyntheticClock",
