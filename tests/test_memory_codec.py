@@ -36,3 +36,25 @@ def test_memory_note_mapping_has_golden_key_order() -> None:
         "tags",
         "created_at",
     ]
+
+
+def test_memory_note_codec_rejects_extensions() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = memory_note_to_dict(_note())
+    encoded["extra"] = True
+    with pytest.raises(ValidationError, match="schema"):
+        memory_note_from_dict(encoded)
+
+
+def test_memory_note_codec_rejects_non_string_tags() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = memory_note_to_dict(_note())
+    encoded["tags"] = [1]
+    with pytest.raises(ValidationError, match="tags"):
+        memory_note_from_dict(encoded)
