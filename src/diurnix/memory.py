@@ -104,3 +104,14 @@ class MemoryStore:
         if scope is not None:
             notes = tuple(note for note in notes if note.scope is scope)
         return tuple(sorted(notes, key=lambda note: (note.created_at, note.note_id)))
+
+
+_PRIVACY_LEVEL = {PrivacyTier.PUBLIC: 0, PrivacyTier.PERSONAL: 1, PrivacyTier.SENSITIVE: 2}
+
+
+def can_read_memory(note: MemoryNote, reader_tier: PrivacyTier) -> bool:
+    return _PRIVACY_LEVEL[reader_tier] >= _PRIVACY_LEVEL[note.privacy]
+
+
+def visible_memories(store: MemoryStore, reader_tier: PrivacyTier) -> tuple[MemoryNote, ...]:
+    return tuple(note for note in store.notes() if can_read_memory(note, reader_tier))
