@@ -80,3 +80,27 @@ def memory_note_from_dict(value: dict[str, object]) -> MemoryNote:
         )
     except ValueError as error:
         raise ValidationError(f"invalid memory note value: {error}") from error
+
+
+class MemoryStore:
+    def __init__(self, notes: tuple[MemoryNote, ...] = ()) -> None:
+        self._notes: dict[str, MemoryNote] = {}
+        for note in notes:
+            self.add(note)
+
+    def add(self, note: MemoryNote) -> None:
+        if note.note_id in self._notes:
+            raise ValidationError(f"duplicate memory note: {note.note_id}")
+        self._notes[note.note_id] = note
+
+    def get(self, note_id: str) -> MemoryNote:
+        try:
+            return self._notes[note_id]
+        except KeyError as error:
+            raise ValidationError(f"unknown memory note: {note_id}") from error
+
+    def notes(self, scope: MemoryScope | None = None) -> tuple[MemoryNote, ...]:
+        notes = tuple(self._notes.values())
+        if scope is not None:
+            notes = tuple(note for note in notes if note.scope is scope)
+        return tuple(sorted(notes, key=lambda note: (note.created_at, note.note_id)))
