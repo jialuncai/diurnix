@@ -20,3 +20,22 @@ def test_memory_store_filters_scopes_without_reordering() -> None:
 def test_memory_store_returns_deterministic_id_order_for_ties() -> None:
     store = MemoryStore((_note("z", MemoryScope.SESSION), _note("a", MemoryScope.SESSION)))
     assert tuple(note.note_id for note in store.notes()) == ("a", "z")
+
+
+def test_memory_store_rejects_duplicate_ids_across_scopes() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    store = MemoryStore((_note("same", MemoryScope.WORKING),))
+    with pytest.raises(ValidationError, match="duplicate"):
+        store.add(_note("same", MemoryScope.PERSISTENT))
+
+
+def test_memory_store_reports_unknown_ids() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    with pytest.raises(ValidationError, match="unknown"):
+        MemoryStore().get("missing")
