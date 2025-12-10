@@ -33,3 +33,19 @@ def test_sensitive_reader_can_read_all_tiers() -> None:
     assert all(
         can_read_memory(_note(tier.value, tier), PrivacyTier.SENSITIVE) for tier in PrivacyTier
     )
+
+
+def test_every_privacy_pair_matches_ordered_lattice() -> None:
+    levels = {PrivacyTier.PUBLIC: 0, PrivacyTier.PERSONAL: 1, PrivacyTier.SENSITIVE: 2}
+    for reader in PrivacyTier:
+        for stored in PrivacyTier:
+            assert can_read_memory(_note(stored.value, stored), reader) is (
+                levels[reader] >= levels[stored]
+            )
+
+
+def test_visibility_never_changes_stored_notes() -> None:
+    store = MemoryStore(tuple(_note(tier.value, tier) for tier in PrivacyTier))
+    before = store.notes()
+    visible_memories(store, PrivacyTier.PUBLIC)
+    assert store.notes() == before
