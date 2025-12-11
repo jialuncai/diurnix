@@ -166,3 +166,11 @@ class RetentionPolicy:
             MemoryScope.SESSION: self.session_days,
             MemoryScope.PERSISTENT: self.persistent_days,
         }[scope]
+
+
+def retention_score(note: MemoryNote, now: datetime, policy: RetentionPolicy) -> float:
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValidationError("retention time must be timezone-aware")
+    age_days = max(0.0, (now - note.created_at).total_seconds() / 86400)
+    score = max(0.0, 1.0 - age_days / policy.days_for(note.scope))
+    return round(score, 6)
