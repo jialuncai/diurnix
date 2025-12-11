@@ -115,3 +115,17 @@ def can_read_memory(note: MemoryNote, reader_tier: PrivacyTier) -> bool:
 
 def visible_memories(store: MemoryStore, reader_tier: PrivacyTier) -> tuple[MemoryNote, ...]:
     return tuple(note for note in store.notes() if can_read_memory(note, reader_tier))
+
+
+def query_memory_tags(
+    store: MemoryStore, tags: tuple[str, ...], *, match_all: bool = True
+) -> tuple[MemoryNote, ...]:
+    wanted = {tag.strip().casefold() for tag in tags if tag.strip()}
+    if not wanted:
+        raise ValidationError("memory tag query cannot be empty")
+    matches = []
+    for note in store.notes():
+        present = set(note.tags)
+        if (wanted <= present) if match_all else bool(wanted & present):
+            matches.append(note)
+    return tuple(matches)
