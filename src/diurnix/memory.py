@@ -129,3 +129,19 @@ def query_memory_tags(
         if (wanted <= present) if match_all else bool(wanted & present):
             matches.append(note)
     return tuple(matches)
+
+
+def episodic_buckets(
+    notes: tuple[MemoryNote, ...], timezone_name: str
+) -> dict[str, tuple[MemoryNote, ...]]:
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    try:
+        zone = ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError as error:
+        raise ValidationError(f"unknown episodic timezone: {timezone_name}") from error
+    buckets: dict[str, list[MemoryNote]] = {}
+    for note in sorted(notes, key=lambda item: (item.created_at, item.note_id)):
+        day = note.created_at.astimezone(zone).date().isoformat()
+        buckets.setdefault(day, []).append(note)
+    return {day: tuple(items) for day, items in sorted(buckets.items())}
