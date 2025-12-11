@@ -145,3 +145,24 @@ def episodic_buckets(
         day = note.created_at.astimezone(zone).date().isoformat()
         buckets.setdefault(day, []).append(note)
     return {day: tuple(items) for day, items in sorted(buckets.items())}
+
+
+@dataclass(frozen=True, slots=True)
+class RetentionPolicy:
+    working_days: float = 1.0
+    session_days: float = 7.0
+    persistent_days: float = 365.0
+    minimum_score: float = 0.1
+
+    def __post_init__(self) -> None:
+        if min(self.working_days, self.session_days, self.persistent_days) <= 0:
+            raise ValidationError("retention windows must be positive")
+        if not 0 <= self.minimum_score <= 1:
+            raise ValidationError("minimum retention score must be between zero and one")
+
+    def days_for(self, scope: MemoryScope) -> float:
+        return {
+            MemoryScope.WORKING: self.working_days,
+            MemoryScope.SESSION: self.session_days,
+            MemoryScope.PERSISTENT: self.persistent_days,
+        }[scope]
