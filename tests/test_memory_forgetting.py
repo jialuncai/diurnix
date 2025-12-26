@@ -25,3 +25,19 @@ def test_forgetting_partitions_at_configured_threshold() -> None:
     )
     assert tuple(note.note_id for note in kept) == ("new",)
     assert tuple(note.note_id for note in forgotten) == ("old",)
+
+
+def test_forgetting_is_independent_of_input_order() -> None:
+    now = datetime(2026, 1, 10, tzinfo=UTC)
+    notes = (_note("old", 10), _note("fresh", 0), _note("middle", 1))
+    assert partition_retained_memory(notes, now, RetentionPolicy(working_days=2)) == (
+        partition_retained_memory(tuple(reversed(notes)), now, RetentionPolicy(working_days=2))
+    )
+
+
+def test_forgetting_preserves_every_note_exactly_once() -> None:
+    now = datetime(2026, 1, 10, tzinfo=UTC)
+    notes = tuple(_note(f"n-{age}", age) for age in range(4))
+    kept, forgotten = partition_retained_memory(notes, now, RetentionPolicy(working_days=2))
+    assert {note.note_id for note in (*kept, *forgotten)} == {note.note_id for note in notes}
+    assert not set(kept) & set(forgotten)
