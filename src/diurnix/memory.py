@@ -187,3 +187,22 @@ def partition_retained_memory(
         )
         target.append(note)
     return tuple(retained), tuple(forgotten)
+
+
+def memory_snapshot(store: MemoryStore) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    notes = [memory_note_to_dict(note) for note in store.notes()]
+    return {"schema_version": 1, "checksum": content_checksum(notes), "notes": notes}
+
+
+def restore_memory_snapshot(value: dict[str, object]) -> MemoryStore:
+    from diurnix.integrity import verify_content
+
+    if set(value) != {"schema_version", "checksum", "notes"} or value.get("schema_version") != 1:
+        raise ValidationError("memory snapshot does not match schema")
+    notes = value["notes"]
+    if not isinstance(notes, list) or not all(isinstance(note, dict) for note in notes):
+        raise ValidationError("memory snapshot notes must be objects")
+    verify_content(notes, str(value["checksum"]))
+    return MemoryStore(tuple(memory_note_from_dict(note) for note in notes))
