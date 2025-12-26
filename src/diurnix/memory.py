@@ -174,3 +174,16 @@ def retention_score(note: MemoryNote, now: datetime, policy: RetentionPolicy) ->
     age_days = max(0.0, (now - note.created_at).total_seconds() / 86400)
     score = max(0.0, 1.0 - age_days / policy.days_for(note.scope))
     return round(score, 6)
+
+
+def partition_retained_memory(
+    notes: tuple[MemoryNote, ...], now: datetime, policy: RetentionPolicy
+) -> tuple[tuple[MemoryNote, ...], tuple[MemoryNote, ...]]:
+    retained = []
+    forgotten = []
+    for note in sorted(notes, key=lambda item: (item.created_at, item.note_id)):
+        target = (
+            retained if retention_score(note, now, policy) >= policy.minimum_score else forgotten
+        )
+        target.append(note)
+    return tuple(retained), tuple(forgotten)
