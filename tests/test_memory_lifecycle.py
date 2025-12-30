@@ -21,3 +21,21 @@ def test_memory_store_clears_only_requested_scope() -> None:
     store = MemoryStore((_note("w", MemoryScope.WORKING), _note("p", MemoryScope.PERSISTENT)))
     assert store.clear_scope(MemoryScope.WORKING) == (_note("w", MemoryScope.WORKING),)
     assert store.notes() == (_note("p", MemoryScope.PERSISTENT),)
+
+
+def test_clearing_empty_scope_is_idempotent() -> None:
+    store = MemoryStore((_note("p", MemoryScope.PERSISTENT),))
+    assert store.clear_scope(MemoryScope.WORKING) == ()
+    assert store.clear_scope(MemoryScope.WORKING) == ()
+    assert len(store.notes()) == 1
+
+
+def test_removed_note_cannot_be_read_again() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    store = MemoryStore((_note("w", MemoryScope.WORKING),))
+    store.remove("w")
+    with pytest.raises(ValidationError, match="unknown"):
+        store.get("w")
