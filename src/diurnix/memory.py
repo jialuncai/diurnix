@@ -233,3 +233,12 @@ def memory_manifest(store: MemoryStore, seed: int) -> dict[str, object]:
         "scope_counts": counts,
         "snapshot_checksum": content_checksum(snapshot),
     }
+
+
+def promote_memory(note: MemoryNote, target: MemoryScope) -> MemoryNote:
+    from dataclasses import replace
+
+    levels = {MemoryScope.WORKING: 0, MemoryScope.SESSION: 1, MemoryScope.PERSISTENT: 2}
+    if levels[target] < levels[note.scope]:
+        raise ValidationError("memory promotion cannot move to a shorter-lived scope")
+    return replace(note, scope=target)
