@@ -206,3 +206,18 @@ def restore_memory_snapshot(value: dict[str, object]) -> MemoryStore:
         raise ValidationError("memory snapshot notes must be objects")
     verify_content(notes, str(value["checksum"]))
     return MemoryStore(tuple(memory_note_from_dict(note) for note in notes))
+
+
+def memory_manifest(store: MemoryStore, seed: int) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    counts = {scope.value: len(store.notes(scope)) for scope in MemoryScope}
+    snapshot = memory_snapshot(store)
+    return {
+        "kind": "memory.snapshot",
+        "schema_version": 1,
+        "seed": seed,
+        "synthetic": True,
+        "scope_counts": counts,
+        "snapshot_checksum": content_checksum(snapshot),
+    }
