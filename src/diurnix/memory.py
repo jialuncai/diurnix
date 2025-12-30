@@ -105,6 +105,18 @@ class MemoryStore:
             notes = tuple(note for note in notes if note.scope is scope)
         return tuple(sorted(notes, key=lambda note: (note.created_at, note.note_id)))
 
+    def remove(self, note_id: str) -> MemoryNote:
+        try:
+            return self._notes.pop(note_id)
+        except KeyError as error:
+            raise ValidationError(f"unknown memory note: {note_id}") from error
+
+    def clear_scope(self, scope: MemoryScope) -> tuple[MemoryNote, ...]:
+        removed = self.notes(scope)
+        for note in removed:
+            del self._notes[note.note_id]
+        return removed
+
 
 _PRIVACY_LEVEL = {PrivacyTier.PUBLIC: 0, PrivacyTier.PERSONAL: 1, PrivacyTier.SENSITIVE: 2}
 
