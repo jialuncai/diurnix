@@ -30,3 +30,16 @@ def test_working_capacity_evicts_oldest_notes() -> None:
 def test_working_capacity_rejects_negative_limit() -> None:
     with pytest.raises(ValidationError, match="negative"):
         enforce_working_capacity(MemoryStore(), -1)
+
+
+def test_capacity_zero_keeps_other_scopes() -> None:
+    store = MemoryStore((_note("w", 0), _note("p", 0, MemoryScope.PERSISTENT)))
+    bounded, evicted = enforce_working_capacity(store, 0)
+    assert tuple(note.note_id for note in evicted) == ("w",)
+    assert tuple(note.note_id for note in bounded.notes()) == ("p",)
+
+
+def test_capacity_operation_does_not_mutate_source_store() -> None:
+    store = MemoryStore((_note("old", 0), _note("new", 1)))
+    enforce_working_capacity(store, 1)
+    assert tuple(note.note_id for note in store.notes()) == ("old", "new")
