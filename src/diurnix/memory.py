@@ -255,3 +255,23 @@ def enforce_working_capacity(
     evicted_ids = {note.note_id for note in evicted}
     retained = tuple(note for note in store.notes() if note.note_id not in evicted_ids)
     return MemoryStore(retained), evicted
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryAccessRecord:
+    sequence: int
+    note_id: str
+    reader_tier: PrivacyTier
+    allowed: bool
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryAccessLog:
+    records: tuple[MemoryAccessRecord, ...] = ()
+
+    def check(self, note: MemoryNote, reader_tier: PrivacyTier) -> tuple[bool, MemoryAccessLog]:
+        allowed = can_read_memory(note, reader_tier)
+        reason = "privacy tier permits read" if allowed else "privacy tier blocks read"
+        record = MemoryAccessRecord(len(self.records), note.note_id, reader_tier, allowed, reason)
+        return allowed, MemoryAccessLog((*self.records, record))
