@@ -28,3 +28,21 @@ def test_memory_promotion_preserves_note_identity() -> None:
 def test_memory_promotion_rejects_demotion() -> None:
     with pytest.raises(ValidationError, match="shorter-lived"):
         promote_memory(_note(MemoryScope.PERSISTENT), MemoryScope.SESSION)
+
+
+def test_promotion_never_lowers_privacy_tier() -> None:
+    for privacy in PrivacyTier:
+        note = make_memory_note(
+            privacy.value,
+            MemoryScope.WORKING,
+            privacy,
+            "value",
+            (),
+            datetime(2026, 1, 1, tzinfo=UTC),
+        )
+        assert promote_memory(note, MemoryScope.PERSISTENT).privacy is privacy
+
+
+def test_same_scope_promotion_is_value_preserving() -> None:
+    note = _note(MemoryScope.SESSION)
+    assert promote_memory(note, MemoryScope.SESSION) == note
