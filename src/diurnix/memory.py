@@ -242,3 +242,16 @@ def promote_memory(note: MemoryNote, target: MemoryScope) -> MemoryNote:
     if levels[target] < levels[note.scope]:
         raise ValidationError("memory promotion cannot move to a shorter-lived scope")
     return replace(note, scope=target)
+
+
+def enforce_working_capacity(
+    store: MemoryStore, capacity: int
+) -> tuple[MemoryStore, tuple[MemoryNote, ...]]:
+    if capacity < 0:
+        raise ValidationError("working memory capacity cannot be negative")
+    working = store.notes(MemoryScope.WORKING)
+    evicted_count = max(0, len(working) - capacity)
+    evicted = working[:evicted_count]
+    evicted_ids = {note.note_id for note in evicted}
+    retained = tuple(note for note in store.notes() if note.note_id not in evicted_ids)
+    return MemoryStore(retained), evicted
