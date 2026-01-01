@@ -275,3 +275,37 @@ class MemoryAccessLog:
         reason = "privacy tier permits read" if allowed else "privacy tier blocks read"
         record = MemoryAccessRecord(len(self.records), note.note_id, reader_tier, allowed, reason)
         return allowed, MemoryAccessLog((*self.records, record))
+
+
+@dataclass(frozen=True, slots=True)
+class MemoryReadResult:
+    note: MemoryNote | None
+    policy_effect: str
+    reason: str
+
+
+def policy_read_memory(
+    store: MemoryStore,
+    note_id: str,
+    reader_tier: PrivacyTier,
+    policy_engine: object,
+    occurred_at: datetime,
+) -> MemoryReadResult:
+    from diurnix.policy import PolicyAction, PolicyDecision, PolicyEffect, PolicyEngine
+    from diurnix.tools import SideEffect
+
+    note = store.get(note_id)
+    if not can_read_memory(note, reader_tier):
+        return MemoryReadResult(None, PolicyEffect.DENY.value, "privacy tier blocks read")
+    if not isinstance(policy_engine, PolicyEngine):
+        raise ValidationError("memory policy engine has wrong type")
+    action = PolicyAction(
+        "memory.read",
+        (f"memory.read.{note.privacy.value}",),
+        SideEffect.NONE,
+        {"note_id": note.note_id, "privacy": note.privacy.value},
+        occurred_at,
+    )
+    decision: PolicyDecision = policy_engine.decide(action)
+    visible = note if decision.effect is PolicyEffect.ALLOW else None
+    return MemoryReadResult(visible, decision.effect.value, decision.reason)
