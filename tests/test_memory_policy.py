@@ -51,3 +51,27 @@ def test_policy_ask_memory_read_withholds_note() -> None:
         datetime(2026, 1, 2, tzinfo=UTC),
     )
     assert result.note is None and result.policy_effect == "ask"
+
+
+def test_policy_denial_never_returns_stored_content() -> None:
+    result = policy_read_memory(
+        _store(),
+        "n",
+        PrivacyTier.SENSITIVE,
+        _engine(PolicyEffect.DENY),
+        datetime(2026, 1, 2, tzinfo=UTC),
+    )
+    assert result.note is None
+    assert "secret" not in repr(result)
+
+
+def test_privacy_denial_precedes_allow_policy() -> None:
+    result = policy_read_memory(
+        _store(),
+        "n",
+        PrivacyTier.PUBLIC,
+        _engine(PolicyEffect.ALLOW),
+        datetime(2026, 1, 2, tzinfo=UTC),
+    )
+    assert result.note is None
+    assert result.reason == "privacy tier blocks read"
