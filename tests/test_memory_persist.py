@@ -27,3 +27,18 @@ def test_persist_tagged_memory_promotes_matching_notes() -> None:
     result = persist_tagged_memory(store, ("preference",))
     assert result.get("keep").scope is MemoryScope.PERSISTENT
     assert result.get("drop").scope is MemoryScope.SESSION
+
+
+def test_persistence_preserves_content_tags_and_privacy() -> None:
+    note = _note("keep", ("preference", "work"))
+    promoted = persist_tagged_memory(MemoryStore((note,)), ("work",)).get("keep")
+    assert promoted.content == note.content
+    assert promoted.tags == note.tags
+    assert promoted.privacy is note.privacy
+
+
+def test_persistence_matches_any_requested_tag() -> None:
+    store = MemoryStore((_note("a", ("alpha",)), _note("b", ("beta",))))
+    result = persist_tagged_memory(store, ("alpha", "missing"))
+    assert result.get("a").scope is MemoryScope.PERSISTENT
+    assert result.get("b").scope is MemoryScope.SESSION
