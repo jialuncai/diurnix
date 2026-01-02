@@ -33,3 +33,26 @@ def test_public_export_excludes_planted_sensitive_pii() -> None:
 def test_sensitive_export_includes_every_tier() -> None:
     store = MemoryStore(tuple(_note(tier.value, tier, tier.value) for tier in PrivacyTier))
     assert export_visible_memory(store, PrivacyTier.SENSITIVE)["note_count"] == 3
+
+
+def test_exported_note_tiers_never_exceed_reader_tier() -> None:
+    levels = {PrivacyTier.PUBLIC: 0, PrivacyTier.PERSONAL: 1, PrivacyTier.SENSITIVE: 2}
+    store = MemoryStore(
+        tuple(
+            _note(f"{index}-{tier.value}", tier, f"planted-{index}-{tier.value}")
+            for index in range(5)
+            for tier in PrivacyTier
+        )
+    )
+    for reader in PrivacyTier:
+        exported = export_visible_memory(store, reader)
+        assert all(
+            levels[PrivacyTier(note["privacy"])] <= levels[reader] for note in exported["notes"]
+        )
+
+
+def test_export_count_matches_serialized_rows() -> None:
+    store = MemoryStore(tuple(_note(tier.value, tier, tier.value) for tier in PrivacyTier))
+    for reader in PrivacyTier:
+        exported = export_visible_memory(store, reader)
+        assert exported["note_count"] == len(exported["notes"])
