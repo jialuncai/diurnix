@@ -328,3 +328,13 @@ def persist_tagged_memory(store: MemoryStore, tags: tuple[str, ...]) -> MemorySt
         for note in store.notes()
     )
     return MemoryStore(notes)
+
+
+def export_visible_memory(store: MemoryStore, reader_tier: PrivacyTier) -> dict[str, object]:
+    notes = [memory_note_to_dict(note) for note in visible_memories(store, reader_tier)]
+    return {
+        "schema_version": 1,
+        "reader_tier": reader_tier.value,
+        "note_count": len(notes),
+        "notes": notes,
+    }
