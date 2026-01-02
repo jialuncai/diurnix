@@ -309,3 +309,11 @@ def policy_read_memory(
     decision: PolicyDecision = policy_engine.decide(action)
     visible = note if decision.effect is PolicyEffect.ALLOW else None
     return MemoryReadResult(visible, decision.effect.value, decision.reason)
+
+
+def roll_working_to_session(store: MemoryStore) -> MemoryStore:
+    notes = tuple(
+        promote_memory(note, MemoryScope.SESSION) if note.scope is MemoryScope.WORKING else note
+        for note in store.notes()
+    )
+    return MemoryStore(notes)
