@@ -317,3 +317,14 @@ def roll_working_to_session(store: MemoryStore) -> MemoryStore:
         for note in store.notes()
     )
     return MemoryStore(notes)
+
+
+def persist_tagged_memory(store: MemoryStore, tags: tuple[str, ...]) -> MemoryStore:
+    selected = {note.note_id for note in query_memory_tags(store, tags, match_all=False)}
+    notes = tuple(
+        promote_memory(note, MemoryScope.PERSISTENT)
+        if note.note_id in selected and note.scope is MemoryScope.SESSION
+        else note
+        for note in store.notes()
+    )
+    return MemoryStore(notes)
