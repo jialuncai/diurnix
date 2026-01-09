@@ -338,3 +338,15 @@ def export_visible_memory(store: MemoryStore, reader_tier: PrivacyTier) -> dict[
         "note_count": len(notes),
         "notes": notes,
     }
+
+
+def memory_metrics(store: MemoryStore) -> dict[str, object]:
+    notes = store.notes()
+    return {
+        "note_count": len(notes),
+        "scope_counts": {scope.value: len(store.notes(scope)) for scope in MemoryScope},
+        "privacy_counts": {
+            tier.value: sum(note.privacy is tier for note in notes) for tier in PrivacyTier
+        },
+        "tag_count": len({tag for note in notes for tag in note.tags}),
+    }
