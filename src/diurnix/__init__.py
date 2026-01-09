@@ -18,6 +18,7 @@ from diurnix.events import (
 from diurnix.executor import ExecutionReceipt, ExecutionStatus, Executor, RetryConfig
 from diurnix.factory import SyntheticBundle, generate_bundle
 from diurnix.loop import LoopPhase, LoopState
+from diurnix.memory import MemoryNote, MemoryScope, MemoryStore, PrivacyTier
 from diurnix.persona import Persona
 from diurnix.plans import InputRef, Plan, PlanStep, ValueType
 from diurnix.policy import PolicyAction, PolicyDecision, PolicyEffect, PolicyEngine, PolicyRule
@@ -49,6 +50,9 @@ __all__ = [
     "LoopPhase",
     "LoopState",
     "LoopTrace",
+    "MemoryNote",
+    "MemoryScope",
+    "MemoryStore",
     "NumpyRouter",
     "PendingApproval",
     "Persona",
@@ -60,6 +64,7 @@ __all__ = [
     "PolicyEffect",
     "PolicyEngine",
     "PolicyRule",
+    "PrivacyTier",
     "RetryConfig",
     "RouteResult",
     "SeededRandom",
