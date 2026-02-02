@@ -41,3 +41,26 @@ def triage_message(message: InboxMessage) -> TriageResult:
 def triage_inbox(messages: tuple[InboxMessage, ...]) -> tuple[TriageResult, ...]:
     ordered = sorted(messages, key=lambda message: (message.occurred_at, message.event_id))
     return tuple(triage_message(message) for message in ordered)
+
+
+def triage_metrics(
+    messages: tuple[InboxMessage, ...], results: tuple[TriageResult, ...]
+) -> dict[str, object]:
+    truth = {message.event_id: message.planted_label for message in messages}
+    if set(truth) != {result.message_id for result in results}:
+        raise ValueError("triage results do not match inbox identities")
+    slices = {}
+    for label in InboxLabel:
+        selected = [result for result in results if truth[result.message_id] is label]
+        correct = sum(result.predicted_label is label for result in selected)
+        slices[label.value] = {
+            "count": len(selected),
+            "accuracy": round(correct / len(selected), 6) if selected else 0.0,
+        }
+    correct = sum(result.predicted_label is truth[result.message_id] for result in results)
+    return {
+        "sample_count": len(messages),
+        "accuracy": round(correct / len(messages), 6) if messages else 0.0,
+        "slices": slices,
+        "synthetic": True,
+    }
