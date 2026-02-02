@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from diurnix.events import InboxLabel, InboxMessage
 
 _LABEL_CUES = (
@@ -20,3 +22,17 @@ def classify_inbox(message: InboxMessage) -> tuple[InboxLabel, tuple[str, ...]]:
         if matched:
             return label, matched
     return InboxLabel.FYI, ()
+
+
+@dataclass(frozen=True, slots=True)
+class TriageResult:
+    message_id: str
+    predicted_label: InboxLabel
+    confidence: float
+    tells: tuple[str, ...]
+
+
+def triage_message(message: InboxMessage) -> TriageResult:
+    label, tells = classify_inbox(message)
+    confidence = 0.98 if tells else 0.6
+    return TriageResult(message.event_id, label, confidence, tells)
