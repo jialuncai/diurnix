@@ -26,3 +26,17 @@ def test_inbox_classifier_recognizes_high_risk_cues_first() -> None:
 
 def test_inbox_classifier_defaults_uncued_content_to_fyi() -> None:
     assert classify_inbox(_message("项目近况", "这是本周的合成近况。")) == (InboxLabel.FYI, ())
+
+
+def test_classifier_recovers_all_factory_pattern_labels() -> None:
+    from diurnix.synthetic import INBOX_PATTERNS
+
+    for pattern in INBOX_PATTERNS:
+        predicted, _ = classify_inbox(_message(pattern.subject, pattern.body, pattern.label))
+        assert predicted is pattern.label
+
+
+def test_classifier_does_not_read_planted_label_field() -> None:
+    content = _message("每周简报", "取消订阅 | 合成内容", InboxLabel.PHISHING)
+    predicted, _ = classify_inbox(content)
+    assert predicted is InboxLabel.NEWSLETTER
