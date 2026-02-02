@@ -26,3 +26,19 @@ def test_triage_metrics_report_synthetic_ground_truth() -> None:
 def test_triage_metrics_reject_mismatched_result_set() -> None:
     with pytest.raises(ValueError, match="identities"):
         triage_metrics(_messages(), ())
+
+
+def test_empty_triage_metrics_keep_every_label_slice() -> None:
+    from diurnix.events import InboxLabel
+
+    report = triage_metrics((), ())
+    assert report["sample_count"] == 0 and report["accuracy"] == 0.0
+    assert tuple(report["slices"]) == tuple(label.value for label in InboxLabel)
+    assert all(row == {"count": 0, "accuracy": 0.0} for row in report["slices"].values())
+
+
+def test_seeded_triage_measurement_is_reproducible() -> None:
+    messages = _messages()
+    assert triage_metrics(messages, triage_inbox(messages)) == triage_metrics(
+        messages, triage_inbox(messages)
+    )
