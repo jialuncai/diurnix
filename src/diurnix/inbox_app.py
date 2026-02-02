@@ -36,3 +36,8 @@ def triage_message(message: InboxMessage) -> TriageResult:
     label, tells = classify_inbox(message)
     confidence = 0.98 if tells else 0.6
     return TriageResult(message.event_id, label, confidence, tells)
+
+
+def triage_inbox(messages: tuple[InboxMessage, ...]) -> tuple[TriageResult, ...]:
+    ordered = sorted(messages, key=lambda message: (message.occurred_at, message.event_id))
+    return tuple(triage_message(message) for message in ordered)
