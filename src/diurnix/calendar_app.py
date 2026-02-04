@@ -1,0 +1,52 @@
+"""Calendar conflict and rescheduling mechanics for synthetic events."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+
+from diurnix.events import CalendarEntry
+
+
+class IntervalRelation(StrEnum):
+    BEFORE = "before"
+    MEETS = "meets"
+    OVERLAPS = "overlaps"
+    FINISHED_BY = "finished_by"
+    CONTAINS = "contains"
+    STARTS = "starts"
+    EQUALS = "equals"
+    STARTED_BY = "started_by"
+    DURING = "during"
+    FINISHES = "finishes"
+    OVERLAPPED_BY = "overlapped_by"
+    MET_BY = "met_by"
+    AFTER = "after"
+
+
+def interval_relation(left: CalendarEntry, right: CalendarEntry) -> IntervalRelation:
+    a, b, c, d = left.starts_at, left.ends_at, right.starts_at, right.ends_at
+    if b < c:
+        return IntervalRelation.BEFORE
+    if b == c:
+        return IntervalRelation.MEETS
+    if a < c < b < d:
+        return IntervalRelation.OVERLAPS
+    if a < c and b == d:
+        return IntervalRelation.FINISHED_BY
+    if a < c and d < b:
+        return IntervalRelation.CONTAINS
+    if a == c and b < d:
+        return IntervalRelation.STARTS
+    if a == c and b == d:
+        return IntervalRelation.EQUALS
+    if a == c and b > d:
+        return IntervalRelation.STARTED_BY
+    if c < a and b < d:
+        return IntervalRelation.DURING
+    if c < a and b == d:
+        return IntervalRelation.FINISHES
+    if c < a < d < b:
+        return IntervalRelation.OVERLAPPED_BY
+    if a == d:
+        return IntervalRelation.MET_BY
+    return IntervalRelation.AFTER
