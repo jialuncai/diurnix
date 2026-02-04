@@ -91,3 +91,18 @@ def triage_action(result: TriageResult) -> str:
         InboxLabel.SPAM: "discard",
         InboxLabel.PHISHING: "quarantine",
     }[result.predicted_label]
+
+
+def daily_triage_digest(results: tuple[TriageResult, ...], day: str) -> str:
+    counts = {
+        label: sum(result.predicted_label is label for result in results) for label in InboxLabel
+    }
+    lines = [f"# 收件箱摘要 · {day}", "", f"共处理 {len(results)} 封合成邮件。"]
+    lines.extend(f"- {label.value}: {counts[label]}" for label in InboxLabel)
+    action_ids = [
+        result.message_id
+        for result in results
+        if result.predicted_label is InboxLabel.ACTION_REQUIRED
+    ]
+    lines.extend(("", "## 待确认", *(f"- {message_id}" for message_id in action_ids or ["无"])))
+    return "\n".join(lines) + "\n"
