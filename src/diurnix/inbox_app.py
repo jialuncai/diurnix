@@ -81,3 +81,13 @@ def draft_response(message: InboxMessage, result: TriageResult) -> str | None:
         "\n您好\N{FULLWIDTH COMMA}已收到此合成请求"
         "\N{FULLWIDTH SEMICOLON}请人工确认具体安排。"
     )
+
+
+def triage_action(result: TriageResult) -> str:
+    return {
+        InboxLabel.ACTION_REQUIRED: "draft_for_approval",
+        InboxLabel.FYI: "archive",
+        InboxLabel.NEWSLETTER: "read_later",
+        InboxLabel.SPAM: "discard",
+        InboxLabel.PHISHING: "quarantine",
+    }[result.predicted_label]
