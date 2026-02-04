@@ -38,3 +38,24 @@ def test_draft_rejects_result_from_other_message() -> None:
 
     with pytest.raises(ValueError, match="another"):
         draft_response(message, replace(result, message_id="other"))
+
+
+def test_draft_escapes_html_in_subject() -> None:
+    message = _message('<script>alert("x")</script> 请确认')
+    draft = draft_response(message, triage_message(message))
+    assert draft is not None
+    assert "<script>" not in draft and "&lt;script&gt;" in draft
+    assert "&quot;x&quot;" in draft
+
+
+def test_non_action_message_has_no_draft() -> None:
+    message = InboxMessage(
+        "fyi",
+        datetime(2026, 1, 1, tzinfo=UTC),
+        "sender@example.test",
+        ("person@example.test",),
+        "项目近况",
+        "合成近况",
+        InboxLabel.FYI,
+    )
+    assert draft_response(message, triage_message(message)) is None
