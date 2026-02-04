@@ -64,3 +64,20 @@ def triage_metrics(
         "slices": slices,
         "synthetic": True,
     }
+
+
+def draft_response(message: InboxMessage, result: TriageResult) -> str | None:
+    from html import escape
+
+    if result.message_id != message.event_id:
+        raise ValueError("triage result belongs to another message")
+    if result.predicted_label is not InboxLabel.ACTION_REQUIRED:
+        return None
+    safe_subject = escape(message.subject, quote=True)
+    safe_sender = escape(message.sender, quote=True)
+    return (
+        f"主题\N{FULLWIDTH COLON}Re: {safe_subject}"
+        f"\n收件人\N{FULLWIDTH COLON}{safe_sender}"
+        "\n您好\N{FULLWIDTH COMMA}已收到此合成请求"
+        "\N{FULLWIDTH SEMICOLON}请人工确认具体安排。"
+    )
