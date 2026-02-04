@@ -106,3 +106,28 @@ def daily_triage_digest(results: tuple[TriageResult, ...], day: str) -> str:
     ]
     lines.extend(("", "## 待确认", *(f"- {message_id}" for message_id in action_ids or ["无"])))
     return "\n".join(lines) + "\n"
+
+
+def triage_manifest(
+    messages: tuple[InboxMessage, ...], results: tuple[TriageResult, ...], seed: int
+) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    metrics = triage_metrics(messages, results)
+    rows = [
+        {
+            "message_id": result.message_id,
+            "label": result.predicted_label.value,
+            "confidence": result.confidence,
+            "tells": list(result.tells),
+        }
+        for result in results
+    ]
+    return {
+        "kind": "inbox.triage",
+        "schema_version": 1,
+        "seed": seed,
+        "synthetic": True,
+        "result_checksum": content_checksum(rows),
+        "metrics": metrics,
+    }
