@@ -50,3 +50,24 @@ def interval_relation(left: CalendarEntry, right: CalendarEntry) -> IntervalRela
     if a == d:
         return IntervalRelation.MET_BY
     return IntervalRelation.AFTER
+
+
+def intervals_conflict(left: CalendarEntry, right: CalendarEntry) -> bool:
+    return interval_relation(left, right) not in {
+        IntervalRelation.BEFORE,
+        IntervalRelation.MEETS,
+        IntervalRelation.MET_BY,
+        IntervalRelation.AFTER,
+    }
+
+
+def find_calendar_conflicts(
+    entries: tuple[CalendarEntry, ...],
+) -> tuple[tuple[CalendarEntry, CalendarEntry], ...]:
+    ordered = sorted(entries, key=lambda entry: (entry.starts_at, entry.event_id))
+    return tuple(
+        (left, right)
+        for index, left in enumerate(ordered)
+        for right in ordered[index + 1 :]
+        if intervals_conflict(left, right)
+    )
