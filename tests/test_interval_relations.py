@@ -30,3 +30,50 @@ def test_interval_relation_distinguishes_equal_and_containment() -> None:
     assert interval_relation(anchor, _entry("same", 10, 30)) is IntervalRelation.EQUALS
     assert interval_relation(anchor, _entry("inner", 15, 25)) is IntervalRelation.CONTAINS
     assert interval_relation(_entry("inner", 15, 25), anchor) is IntervalRelation.DURING
+
+
+def test_all_thirteen_interval_relations_are_reachable() -> None:
+    pairs = (
+        (0, 10, 20, 30),
+        (0, 10, 10, 20),
+        (0, 20, 10, 30),
+        (0, 20, 10, 20),
+        (0, 30, 10, 20),
+        (0, 10, 0, 20),
+        (0, 10, 0, 10),
+        (0, 20, 0, 10),
+        (10, 20, 0, 30),
+        (10, 30, 0, 30),
+        (10, 30, 0, 20),
+        (20, 30, 0, 20),
+        (20, 30, 0, 10),
+    )
+    actual = {
+        interval_relation(_entry(f"l-{index}", a, b), _entry(f"r-{index}", c, d))
+        for index, (a, b, c, d) in enumerate(pairs)
+    }
+    assert actual == set(IntervalRelation)
+
+
+def test_interval_relation_inverse_pairs_are_consistent() -> None:
+    inverse = {
+        IntervalRelation.BEFORE: IntervalRelation.AFTER,
+        IntervalRelation.MEETS: IntervalRelation.MET_BY,
+        IntervalRelation.OVERLAPS: IntervalRelation.OVERLAPPED_BY,
+        IntervalRelation.FINISHED_BY: IntervalRelation.FINISHES,
+        IntervalRelation.CONTAINS: IntervalRelation.DURING,
+        IntervalRelation.STARTS: IntervalRelation.STARTED_BY,
+        IntervalRelation.EQUALS: IntervalRelation.EQUALS,
+    }
+    pairs = (
+        (0, 10, 20, 30),
+        (0, 10, 10, 20),
+        (0, 20, 10, 30),
+        (0, 20, 10, 20),
+        (0, 30, 10, 20),
+        (0, 10, 0, 20),
+        (0, 10, 0, 10),
+    )
+    for index, (a, b, c, d) in enumerate(pairs):
+        left, right = _entry(f"a-{index}", a, b), _entry(f"b-{index}", c, d)
+        assert interval_relation(right, left) is inverse[interval_relation(left, right)]
