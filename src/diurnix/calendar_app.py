@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import itertools
+from dataclasses import dataclass, replace
+from datetime import date, datetime, timedelta
 from enum import StrEnum
 
+from diurnix.errors import ValidationError
 from diurnix.events import CalendarEntry
+from diurnix.persona import Persona
+from diurnix.persona_factory import work_bounds
 
 
 class IntervalRelation(StrEnum):
@@ -87,3 +92,48 @@ def find_travel_conflicts(
         if left.location != right.location and gap < required:
             conflicts.append((left, right, required - gap))
     return tuple(conflicts)
+
+
+@dataclass(frozen=True, slots=True)
+class RescheduleProposal:
+    entry_id: str
+    starts_at: datetime
+    ends_at: datetime
+    reason: str
+
+
+def propose_reschedule(
+    entry: CalendarEntry,
+    entries: tuple[CalendarEntry, ...],
+    persona: Persona,
+    target_day: date,
+    *,
+    step_minutes: int = 15,
+) -> RescheduleProposal | None:
+    if step_minutes < 1:
+        raise ValidationError("reschedule step must be positive")
+    bounds = work_bounds(persona, target_day)
+    if bounds is None:
+        return None
+    work_start, work_end = bounds
+    duration = timedelta(minutes=entry.duration_minutes)
+    others = tuple(item for item in entries if item.event_id != entry.event_id)
+    candidate_start = work_start
+    while candidate_start + duration <= work_end:
+        candidate = replace(
+            entry,
+            occurred_at=candidate_start,
+            starts_at=candidate_start,
+            ends_at=candidate_start + duration,
+            planted_conflict=False,
+        )
+        proposed = (*others, candidate)
+        if not find_calendar_conflicts(proposed) and not find_travel_conflicts(proposed):
+            return RescheduleProposal(
+                entry.event_id,
+                candidate.starts_at,
+                candidate.ends_at,
+                "first available slot within work hours",
+            )
+        candidate_start += timedelta(minutes=step_minutes)
+    return None
