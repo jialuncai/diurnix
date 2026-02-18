@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from enum import StrEnum
 
 from diurnix.events import CalendarEntry
@@ -71,3 +72,18 @@ def find_calendar_conflicts(
         for right in ordered[index + 1 :]
         if intervals_conflict(left, right)
     )
+
+
+def find_travel_conflicts(
+    entries: tuple[CalendarEntry, ...],
+) -> tuple[tuple[CalendarEntry, CalendarEntry, int], ...]:
+    ordered = sorted(entries, key=lambda entry: (entry.starts_at, entry.event_id))
+    conflicts = []
+    for left, right in itertools.pairwise(ordered):
+        if intervals_conflict(left, right):
+            continue
+        gap = int((right.starts_at.timestamp() - left.ends_at.timestamp()) // 60)
+        required = max(left.travel_minutes, right.travel_minutes)
+        if left.location != right.location and gap < required:
+            conflicts.append((left, right, required - gap))
+    return tuple(conflicts)
