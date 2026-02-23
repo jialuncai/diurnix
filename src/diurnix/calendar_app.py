@@ -184,3 +184,20 @@ def calendar_digest(entries: tuple[CalendarEntry, ...]) -> str:
     if not overlap:
         lines.append("- 无")
     return "\n".join(lines) + "\n"
+
+
+def calendar_conflict_metrics(entries: tuple[CalendarEntry, ...]) -> dict[str, object]:
+    truth = {entry.event_id for entry in entries if entry.planted_conflict}
+    pairs = find_calendar_conflicts(entries)
+    predicted = {entry.event_id for pair in pairs for entry in pair}
+    true_positive = len(truth & predicted)
+    precision = round(true_positive / len(predicted), 6) if predicted else 0.0
+    recall = round(true_positive / len(truth), 6) if truth else 1.0
+    return {
+        "entry_count": len(entries),
+        "planted_conflict_count": len(truth),
+        "predicted_conflict_count": len(predicted),
+        "precision": precision,
+        "recall": recall,
+        "synthetic": True,
+    }
