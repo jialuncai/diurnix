@@ -163,3 +163,24 @@ def proposal_from_dict(value: dict[str, object]) -> RescheduleProposal:
     if starts_at.tzinfo is None or ends_at.tzinfo is None or ends_at <= starts_at:
         raise ValidationError("calendar proposal bounds are invalid")
     return RescheduleProposal(str(value["entry_id"]), starts_at, ends_at, str(value["reason"]))
+
+
+def calendar_digest(entries: tuple[CalendarEntry, ...]) -> str:
+    overlap = find_calendar_conflicts(entries)
+    travel = find_travel_conflicts(entries)
+    lines = [
+        "# 日程检查",
+        "",
+        f"日程数: {len(entries)}",
+        f"重叠冲突: {len(overlap)}",
+        f"行程缓冲冲突: {len(travel)}",
+        "",
+        "## 重叠明细",
+    ]
+    lines.extend(
+        f"- {left.event_id} ↔ {right.event_id}: {interval_relation(left, right).value}"
+        for left, right in overlap
+    )
+    if not overlap:
+        lines.append("- 无")
+    return "\n".join(lines) + "\n"
