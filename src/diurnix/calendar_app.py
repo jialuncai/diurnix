@@ -201,3 +201,16 @@ def calendar_conflict_metrics(entries: tuple[CalendarEntry, ...]) -> dict[str, o
         "recall": recall,
         "synthetic": True,
     }
+
+
+def propose_conflict_resolutions(
+    entries: tuple[CalendarEntry, ...], persona: Persona
+) -> tuple[RescheduleProposal, ...]:
+    proposals = []
+    for entry in sorted(entries, key=lambda item: (item.starts_at, item.event_id)):
+        if not entry.planted_conflict:
+            continue
+        proposal = propose_reschedule(entry, entries, persona, entry.starts_at.date())
+        if proposal is not None:
+            proposals.append(proposal)
+    return tuple(proposals)
