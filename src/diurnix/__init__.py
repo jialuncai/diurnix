@@ -4,6 +4,7 @@ from diurnix._version import __version__
 from diurnix.approvals import ApprovalQueue, ApprovalStatus, PendingApproval
 from diurnix.artifacts import ArtifactEnvelope
 from diurnix.budgets import Budget, Usage
+from diurnix.calendar_app import IntervalRelation, RescheduleProposal
 from diurnix.clock import SyntheticClock
 from diurnix.errors import DiurnixError, IntegrityError, ValidationError
 from diurnix.events import (
@@ -17,6 +18,7 @@ from diurnix.events import (
 )
 from diurnix.executor import ExecutionReceipt, ExecutionStatus, Executor, RetryConfig
 from diurnix.factory import SyntheticBundle, generate_bundle
+from diurnix.inbox_app import TriageResult
 from diurnix.loop import LoopPhase, LoopState
 from diurnix.memory import MemoryNote, MemoryScope, MemoryStore, PrivacyTier
 from diurnix.persona import Persona
@@ -47,6 +49,7 @@ __all__ = [
     "InputRef",
     "IntegrityError",
     "Intent",
+    "IntervalRelation",
     "LoopPhase",
     "LoopState",
     "LoopTrace",
@@ -65,6 +68,7 @@ __all__ = [
     "PolicyEngine",
     "PolicyRule",
     "PrivacyTier",
+    "RescheduleProposal",
     "RetryConfig",
     "RouteResult",
     "SeededRandom",
@@ -82,6 +86,7 @@ __all__ = [
     "ToolSpec",
     "TraceEntry",
     "Transaction",
+    "TriageResult",
     "Usage",
     "UserUtterance",
     "ValidationError",
