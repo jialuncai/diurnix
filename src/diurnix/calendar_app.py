@@ -214,3 +214,20 @@ def propose_conflict_resolutions(
         if proposal is not None:
             proposals.append(proposal)
     return tuple(proposals)
+
+
+def calendar_analysis_manifest(
+    entries: tuple[CalendarEntry, ...], proposals: tuple[RescheduleProposal, ...], seed: int
+) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    encoded_proposals = [proposal_to_dict(proposal) for proposal in proposals]
+    return {
+        "kind": "calendar.analysis",
+        "schema_version": 1,
+        "seed": seed,
+        "synthetic": True,
+        "metrics": calendar_conflict_metrics(entries),
+        "proposal_checksum": content_checksum(encoded_proposals),
+        "proposal_count": len(proposals),
+    }
