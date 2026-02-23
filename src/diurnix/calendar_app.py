@@ -137,3 +137,29 @@ def propose_reschedule(
             )
         candidate_start += timedelta(minutes=step_minutes)
     return None
+
+
+def proposal_to_dict(proposal: RescheduleProposal) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "entry_id": proposal.entry_id,
+        "starts_at": proposal.starts_at.isoformat(),
+        "ends_at": proposal.ends_at.isoformat(),
+        "reason": proposal.reason,
+    }
+
+
+def proposal_from_dict(value: dict[str, object]) -> RescheduleProposal:
+    from datetime import datetime
+
+    expected = {"schema_version", "entry_id", "starts_at", "ends_at", "reason"}
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("calendar proposal does not match schema")
+    try:
+        starts_at = datetime.fromisoformat(str(value["starts_at"]))
+        ends_at = datetime.fromisoformat(str(value["ends_at"]))
+    except ValueError as error:
+        raise ValidationError("calendar proposal has invalid time") from error
+    if starts_at.tzinfo is None or ends_at.tzinfo is None or ends_at <= starts_at:
+        raise ValidationError("calendar proposal bounds are invalid")
+    return RescheduleProposal(str(value["entry_id"]), starts_at, ends_at, str(value["reason"]))
