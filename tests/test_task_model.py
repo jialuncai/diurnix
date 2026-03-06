@@ -23,3 +23,27 @@ def test_task_status_schema_is_stable() -> None:
         "someday",
         "done",
     )
+
+
+def test_task_rejects_blank_identity_and_nonpositive_effort() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    with pytest.raises(ValidationError, match="blank"):
+        make_task("", "title", NOW)
+    with pytest.raises(ValidationError, match="positive"):
+        make_task("task", "title", NOW, effort_minutes=0)
+
+
+def test_task_validates_importance_and_aware_times() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    with pytest.raises(ValidationError, match="importance"):
+        make_task("task", "title", NOW, importance=6)
+    with pytest.raises(ValidationError, match="capture"):
+        make_task("task", "title", datetime(2026, 1, 1))
+    with pytest.raises(ValidationError, match="deadline"):
+        make_task("task", "title", NOW, deadline=datetime(2026, 1, 2))
