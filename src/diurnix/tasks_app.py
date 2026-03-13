@@ -114,3 +114,21 @@ def capture_task(text: str, captured_at: datetime) -> TaskItem:
         "task", {"text": normalized, "captured_at": captured_at.isoformat()}, length=16
     )
     return make_task(task_id, normalized, captured_at)
+
+
+class Clarification(StrEnum):
+    ACTIONABLE = "actionable"
+    REFERENCE = "reference"
+    SOMEDAY = "someday"
+    DELETE = "delete"
+
+
+def clarify_task(task: TaskItem) -> Clarification:
+    text = task.title.casefold()
+    if any(cue in text for cue in ("垃圾", "delete", "无需处理")):
+        return Clarification.DELETE
+    if any(cue in text for cue in ("参考", "reference", "资料")):
+        return Clarification.REFERENCE
+    if any(cue in text for cue in ("也许", "someday", "将来")):
+        return Clarification.SOMEDAY
+    return Clarification.ACTIONABLE
