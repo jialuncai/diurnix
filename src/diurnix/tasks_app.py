@@ -56,3 +56,49 @@ def make_task(
     return TaskItem(
         task_id, title, captured_at, deadline, importance, effort_minutes, status, context
     )
+
+
+def task_to_dict(task: TaskItem) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "task_id": task.task_id,
+        "title": task.title,
+        "captured_at": task.captured_at.isoformat(),
+        "deadline": task.deadline.isoformat() if task.deadline else None,
+        "importance": task.importance,
+        "effort_minutes": task.effort_minutes,
+        "status": task.status.value,
+        "context": task.context,
+    }
+
+
+def task_from_dict(value: dict[str, object]) -> TaskItem:
+    expected = {
+        "schema_version",
+        "task_id",
+        "title",
+        "captured_at",
+        "deadline",
+        "importance",
+        "effort_minutes",
+        "status",
+        "context",
+    }
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("task does not match schema")
+    try:
+        deadline = (
+            None if value["deadline"] is None else datetime.fromisoformat(str(value["deadline"]))
+        )
+        return make_task(
+            str(value["task_id"]),
+            str(value["title"]),
+            datetime.fromisoformat(str(value["captured_at"])),
+            deadline=deadline,
+            importance=int(value["importance"]),
+            effort_minutes=int(value["effort_minutes"]),
+            status=TaskStatus(str(value["status"])),
+            context=str(value["context"]),
+        )
+    except (TypeError, ValueError) as error:
+        raise ValidationError(f"invalid task value: {error}") from error
