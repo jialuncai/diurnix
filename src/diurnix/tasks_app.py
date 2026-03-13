@@ -102,3 +102,15 @@ def task_from_dict(value: dict[str, object]) -> TaskItem:
         )
     except (TypeError, ValueError) as error:
         raise ValidationError(f"invalid task value: {error}") from error
+
+
+def capture_task(text: str, captured_at: datetime) -> TaskItem:
+    from diurnix.identifiers import stable_identifier
+
+    normalized = " ".join(text.split())
+    if not normalized:
+        raise ValidationError("captured task text must not be blank")
+    task_id = stable_identifier(
+        "task", {"text": normalized, "captured_at": captured_at.isoformat()}, length=16
+    )
+    return make_task(task_id, normalized, captured_at)
