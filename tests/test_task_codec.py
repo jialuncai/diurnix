@@ -36,3 +36,25 @@ def test_task_mapping_has_golden_keys() -> None:
         "status",
         "context",
     ]
+
+
+def test_task_codec_rejects_extensions() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = task_to_dict(_task())
+    encoded["extra"] = True
+    with pytest.raises(ValidationError, match="schema"):
+        task_from_dict(encoded)
+
+
+def test_task_codec_rejects_unknown_status() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = task_to_dict(_task())
+    encoded["status"] = "lost"
+    with pytest.raises(ValidationError, match="invalid task"):
+        task_from_dict(encoded)
