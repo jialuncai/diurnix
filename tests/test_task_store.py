@@ -21,3 +21,22 @@ def test_task_store_add_and_transition_return_new_values() -> None:
 def test_task_store_filters_status_in_insertion_order() -> None:
     store = TaskStore((_task("a"), _task("b", TaskStatus.SOMEDAY), _task("c")))
     assert tuple(task.task_id for task in store.by_status(TaskStatus.NEXT)) == ("a", "c")
+
+
+def test_task_store_rejects_duplicate_ids() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    store = TaskStore().add(_task("same"))
+    with pytest.raises(ValidationError, match="duplicate"):
+        store.add(_task("same", TaskStatus.SOMEDAY))
+
+
+def test_task_store_rejects_unknown_transition() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    with pytest.raises(ValidationError, match="unknown"):
+        TaskStore().transition("missing", TaskStatus.DONE)
