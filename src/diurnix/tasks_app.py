@@ -145,3 +145,28 @@ def organize_task(task: TaskItem, clarification: Clarification) -> TaskItem | No
     if task.deadline is not None and target is TaskStatus.NEXT:
         target = TaskStatus.SCHEDULED
     return replace(task, status=target)
+
+
+@dataclass(frozen=True, slots=True)
+class TaskStore:
+    tasks: tuple[TaskItem, ...] = ()
+
+    def add(self, task: TaskItem) -> TaskStore:
+        if any(item.task_id == task.task_id for item in self.tasks):
+            raise ValidationError(f"duplicate task: {task.task_id}")
+        return TaskStore((*self.tasks, task))
+
+    def transition(self, task_id: str, status: TaskStatus) -> TaskStore:
+        from dataclasses import replace
+
+        if not any(item.task_id == task_id for item in self.tasks):
+            raise ValidationError(f"unknown task: {task_id}")
+        return TaskStore(
+            tuple(
+                replace(item, status=status) if item.task_id == task_id else item
+                for item in self.tasks
+            )
+        )
+
+    def by_status(self, status: TaskStatus) -> tuple[TaskItem, ...]:
+        return tuple(item for item in self.tasks if item.status is status)
