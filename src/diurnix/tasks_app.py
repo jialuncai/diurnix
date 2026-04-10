@@ -132,3 +132,16 @@ def clarify_task(task: TaskItem) -> Clarification:
     if any(cue in text for cue in ("也许", "someday", "将来")):
         return Clarification.SOMEDAY
     return Clarification.ACTIONABLE
+
+
+def organize_task(task: TaskItem, clarification: Clarification) -> TaskItem | None:
+    from dataclasses import replace
+
+    if task.status is not TaskStatus.INBOX:
+        raise ValidationError("only inbox tasks can be organized")
+    if clarification in (Clarification.DELETE, Clarification.REFERENCE):
+        return None
+    target = TaskStatus.SOMEDAY if clarification is Clarification.SOMEDAY else TaskStatus.NEXT
+    if task.deadline is not None and target is TaskStatus.NEXT:
+        target = TaskStatus.SCHEDULED
+    return replace(task, status=target)
