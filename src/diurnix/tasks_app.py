@@ -170,3 +170,15 @@ class TaskStore:
 
     def by_status(self, status: TaskStatus) -> tuple[TaskItem, ...]:
         return tuple(item for item in self.tasks if item.status is status)
+
+
+def task_priority(task: TaskItem, now: datetime) -> float:
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValidationError("priority time must be timezone-aware")
+    if task.deadline is None:
+        urgency = 0.25
+    else:
+        days = max(0.0, (task.deadline - now).total_seconds() / 86400)
+        urgency = 1.0 / (1.0 + days)
+    effort_factor = 1.0 + task.effort_minutes / 60
+    return round((task.importance * urgency * 10) / effort_factor, 6)
