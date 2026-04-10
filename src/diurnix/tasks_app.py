@@ -182,3 +182,19 @@ def task_priority(task: TaskItem, now: datetime) -> float:
         urgency = 1.0 / (1.0 + days)
     effort_factor = 1.0 + task.effort_minutes / 60
     return round((task.importance * urgency * 10) / effort_factor, 6)
+
+
+def rank_tasks(tasks: tuple[TaskItem, ...], now: datetime) -> tuple[TaskItem, ...]:
+    actionable = tuple(
+        task for task in tasks if task.status in (TaskStatus.NEXT, TaskStatus.SCHEDULED)
+    )
+    return tuple(
+        sorted(
+            actionable,
+            key=lambda task: (
+                -task_priority(task, now),
+                task.deadline or datetime.max.replace(tzinfo=now.tzinfo),
+                task.task_id,
+            ),
+        )
+    )
