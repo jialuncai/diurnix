@@ -40,3 +40,34 @@ def test_daily_plan_returns_actionable_tasks_only() -> None:
     someday = make_task("later", "later", NOW, status=TaskStatus.SOMEDAY)
     plan = build_daily_task_plan((_task("next", 30), someday), (), persona, DAY, NOW)
     assert tuple(slot.task_id for slot in plan.slots) == ("next",)
+
+
+def test_daily_plan_never_exceeds_task_or_effort_budgets() -> None:
+    persona = create_persona(1)
+    tasks = tuple(_task(f"task-{index}", 30, 5 - index) for index in range(4))
+    plan = build_daily_task_plan(tasks, (), persona, DAY, NOW, max_tasks=2, max_effort_minutes=60)
+    assert len(plan.slots) == 2 and plan.effort_minutes == 60
+    assert len(plan.unscheduled_task_ids) == 2
+
+
+def test_daily_plan_zero_budget_schedules_nothing() -> None:
+    persona = create_persona(1)
+    plan = build_daily_task_plan(
+        (_task("task", 30),),
+        (),
+        persona,
+        DAY,
+        NOW,
+        max_tasks=0,
+        max_effort_minutes=0,
+    )
+    assert plan.slots == () and plan.unscheduled_task_ids == ("task",)
+
+
+def test_daily_plan_rejects_negative_budgets() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    with pytest.raises(ValidationError, match="negative"):
+        build_daily_task_plan((), (), create_persona(1), DAY, NOW, max_tasks=-1)
