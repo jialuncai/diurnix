@@ -268,3 +268,49 @@ def build_daily_task_plan(
         busy.append((slot.starts_at, slot.ends_at))
         used_effort += task.effort_minutes
     return DailyTaskPlan(day, tuple(slots), tuple(unscheduled), used_effort)
+
+
+def daily_plan_to_dict(plan: DailyTaskPlan) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "day": plan.day.isoformat(),
+        "slots": [
+            {
+                "task_id": slot.task_id,
+                "starts_at": slot.starts_at.isoformat(),
+                "ends_at": slot.ends_at.isoformat(),
+                "priority": slot.priority,
+            }
+            for slot in plan.slots
+        ],
+        "unscheduled_task_ids": list(plan.unscheduled_task_ids),
+        "effort_minutes": plan.effort_minutes,
+    }
+
+
+def daily_plan_from_dict(value: dict[str, object]) -> DailyTaskPlan:
+    expected = {"schema_version", "day", "slots", "unscheduled_task_ids", "effort_minutes"}
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("daily task plan does not match schema")
+    slots_value = value["slots"]
+    unscheduled = value["unscheduled_task_ids"]
+    if not isinstance(slots_value, list) or not isinstance(unscheduled, list):
+        raise ValidationError("daily task plan arrays are invalid")
+    try:
+        slots = tuple(
+            DailyTaskSlot(
+                str(item["task_id"]),
+                datetime.fromisoformat(str(item["starts_at"])),
+                datetime.fromisoformat(str(item["ends_at"])),
+                float(item["priority"]),
+            )
+            for item in slots_value
+        )
+        return DailyTaskPlan(
+            date.fromisoformat(str(value["day"])),
+            slots,
+            tuple(str(item) for item in unscheduled),
+            int(value["effort_minutes"]),
+        )
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationError("invalid daily task plan value") from error
