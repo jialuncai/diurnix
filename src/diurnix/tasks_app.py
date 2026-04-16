@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from enum import StrEnum
 
 from diurnix.errors import ValidationError
+from diurnix.events import CalendarEntry
+from diurnix.persona import Persona
+from diurnix.persona_factory import work_bounds
 
 
 class TaskStatus(StrEnum):
@@ -198,3 +201,70 @@ def rank_tasks(tasks: tuple[TaskItem, ...], now: datetime) -> tuple[TaskItem, ..
             ),
         )
     )
+
+
+@dataclass(frozen=True, slots=True)
+class DailyTaskSlot:
+    task_id: str
+    starts_at: datetime
+    ends_at: datetime
+    priority: float
+
+
+@dataclass(frozen=True, slots=True)
+class DailyTaskPlan:
+    day: date
+    slots: tuple[DailyTaskSlot, ...]
+    unscheduled_task_ids: tuple[str, ...]
+    effort_minutes: int
+
+
+def build_daily_task_plan(
+    tasks: tuple[TaskItem, ...],
+    calendar: tuple[CalendarEntry, ...],
+    persona: Persona,
+    day: date,
+    now: datetime,
+    *,
+    max_tasks: int = 8,
+    max_effort_minutes: int = 240,
+) -> DailyTaskPlan:
+    if max_tasks < 0 or max_effort_minutes < 0:
+        raise ValidationError("daily task budgets cannot be negative")
+    ranked = rank_tasks(tasks, now)
+    bounds = work_bounds(persona, day)
+    if bounds is None:
+        return DailyTaskPlan(day, (), tuple(task.task_id for task in ranked), 0)
+    work_start, work_end = bounds
+    busy = sorted(
+        (
+            entry.starts_at - timedelta(minutes=entry.travel_minutes),
+            entry.ends_at + timedelta(minutes=entry.travel_minutes),
+        )
+        for entry in calendar
+        if entry.starts_at.astimezone(work_start.tzinfo).date() == day
+    )
+    slots = []
+    unscheduled = []
+    used_effort = 0
+    for task in ranked:
+        if len(slots) >= max_tasks or used_effort + task.effort_minutes > max_effort_minutes:
+            unscheduled.append(task.task_id)
+            continue
+        duration = timedelta(minutes=task.effort_minutes)
+        candidate = work_start
+        for blocked_start, blocked_end in sorted(busy):
+            if candidate + duration <= blocked_start:
+                break
+            if candidate < blocked_end:
+                candidate = blocked_end
+        if candidate + duration > work_end:
+            unscheduled.append(task.task_id)
+            continue
+        slot = DailyTaskSlot(
+            task.task_id, candidate, candidate + duration, task_priority(task, now)
+        )
+        slots.append(slot)
+        busy.append((slot.starts_at, slot.ends_at))
+        used_effort += task.effort_minutes
+    return DailyTaskPlan(day, tuple(slots), tuple(unscheduled), used_effort)
