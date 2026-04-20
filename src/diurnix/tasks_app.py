@@ -314,3 +314,30 @@ def daily_plan_from_dict(value: dict[str, object]) -> DailyTaskPlan:
         )
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError("invalid daily task plan value") from error
+
+
+@dataclass(frozen=True, slots=True)
+class TaskProgress:
+    task_id: str
+    completed_minutes: int
+    observed_at: datetime
+    done: bool
+
+
+def record_task_progress(
+    task: TaskItem, completed_minutes: int, observed_at: datetime
+) -> TaskProgress:
+    if completed_minutes < 0:
+        raise ValidationError("completed task minutes cannot be negative")
+    if observed_at.tzinfo is None or observed_at.utcoffset() is None:
+        raise ValidationError("task progress time must be timezone-aware")
+    bounded = min(completed_minutes, task.effort_minutes)
+    return TaskProgress(task.task_id, bounded, observed_at, bounded == task.effort_minutes)
+
+
+def apply_task_progress(task: TaskItem, progress: TaskProgress) -> TaskItem:
+    from dataclasses import replace
+
+    if task.task_id != progress.task_id:
+        raise ValidationError("task progress identity mismatch")
+    return replace(task, status=TaskStatus.DONE) if progress.done else task
