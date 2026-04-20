@@ -341,3 +341,30 @@ def apply_task_progress(task: TaskItem, progress: TaskProgress) -> TaskItem:
     if task.task_id != progress.task_id:
         raise ValidationError("task progress identity mismatch")
     return replace(task, status=TaskStatus.DONE) if progress.done else task
+
+
+@dataclass(frozen=True, slots=True)
+class TaskSlippage:
+    task_id: str
+    planned_minutes: int
+    completed_minutes: int
+    overdue: bool
+
+
+def detect_task_slippage(
+    plan: DailyTaskPlan,
+    tasks: tuple[TaskItem, ...],
+    progress: tuple[TaskProgress, ...],
+    as_of: datetime,
+) -> tuple[TaskSlippage, ...]:
+    task_by_id = {task.task_id: task for task in tasks}
+    completed = {item.task_id: item.completed_minutes for item in progress}
+    result = []
+    for slot in plan.slots:
+        task = task_by_id[slot.task_id]
+        actual = completed.get(slot.task_id, 0)
+        due = slot.ends_at <= as_of
+        if due and actual < task.effort_minutes:
+            overdue = task.deadline is not None and task.deadline < as_of
+            result.append(TaskSlippage(task.task_id, task.effort_minutes, actual, overdue))
+    return tuple(result)
