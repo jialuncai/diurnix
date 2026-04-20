@@ -30,3 +30,25 @@ def test_daily_plan_mapping_has_golden_keys() -> None:
         "effort_minutes",
     ]
     assert list(encoded["slots"][0]) == ["task_id", "starts_at", "ends_at", "priority"]
+
+
+def test_daily_plan_codec_rejects_extensions() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = daily_plan_to_dict(_plan())
+    encoded["extra"] = True
+    with pytest.raises(ValidationError, match="schema"):
+        daily_plan_from_dict(encoded)
+
+
+def test_daily_plan_codec_rejects_non_array_slots() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = daily_plan_to_dict(_plan())
+    encoded["slots"] = {}
+    with pytest.raises(ValidationError, match="arrays"):
+        daily_plan_from_dict(encoded)
