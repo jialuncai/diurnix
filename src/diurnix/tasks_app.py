@@ -368,3 +368,20 @@ def detect_task_slippage(
             overdue = task.deadline is not None and task.deadline < as_of
             result.append(TaskSlippage(task.task_id, task.effort_minutes, actual, overdue))
     return tuple(result)
+
+
+def weekly_task_review(
+    tasks: tuple[TaskItem, ...], slippage: tuple[TaskSlippage, ...]
+) -> dict[str, object]:
+    completed = sum(task.status is TaskStatus.DONE for task in tasks)
+    actionable = sum(task.status in (TaskStatus.NEXT, TaskStatus.SCHEDULED) for task in tasks)
+    denominator = completed + actionable
+    return {
+        "task_count": len(tasks),
+        "completed_count": completed,
+        "actionable_count": actionable,
+        "someday_count": sum(task.status is TaskStatus.SOMEDAY for task in tasks),
+        "slipped_task_ids": [item.task_id for item in slippage],
+        "completion_rate": round(completed / denominator, 6) if denominator else 0.0,
+        "synthetic": True,
+    }
