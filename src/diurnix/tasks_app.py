@@ -401,3 +401,20 @@ def weekly_review_digest(review: dict[str, object]) -> str:
     ]
     lines.extend(f"- {task_id}" for task_id in slipped or ["无"])
     return "\n".join(lines) + "\n"
+
+
+def task_planning_manifest(
+    plan: DailyTaskPlan, review: dict[str, object], seed: int
+) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    encoded_plan = daily_plan_to_dict(plan)
+    return {
+        "kind": "tasks.planning",
+        "schema_version": 1,
+        "seed": seed,
+        "synthetic": True,
+        "plan_checksum": content_checksum(encoded_plan),
+        "review_checksum": content_checksum(review),
+        "scheduled_count": len(plan.slots),
+    }
