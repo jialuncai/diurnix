@@ -385,3 +385,19 @@ def weekly_task_review(
         "completion_rate": round(completed / denominator, 6) if denominator else 0.0,
         "synthetic": True,
     }
+
+
+def weekly_review_digest(review: dict[str, object]) -> str:
+    slipped = review["slipped_task_ids"]
+    lines = [
+        "# 每周任务回顾",
+        "",
+        f"任务总数: {review['task_count']}",
+        f"已完成: {review['completed_count']}",
+        f"待行动: {review['actionable_count']}",
+        f"完成率: {float(review['completion_rate']):.2%}",
+        "",
+        "## 延误任务",
+    ]
+    lines.extend(f"- {task_id}" for task_id in slipped or ["无"])
+    return "\n".join(lines) + "\n"
