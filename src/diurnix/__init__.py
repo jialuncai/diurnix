@@ -29,6 +29,7 @@ from diurnix.randomness import SeededRandom
 from diurnix.registry import ToolRegistry
 from diurnix.router import Intent, NumpyRouter, RouteResult
 from diurnix.session import SessionEntry, SessionFileRecorder, SessionRecorder, SessionReplayer
+from diurnix.tasks_app import DailyTaskPlan, TaskItem, TaskStatus
 from diurnix.tool_calls import ToolCall, ToolResult
 from diurnix.tools import SideEffect, ToolSpec
 from diurnix.traces import LoopTrace, TraceEntry
@@ -39,6 +40,7 @@ __all__ = [
     "ArtifactEnvelope",
     "Budget",
     "CalendarEntry",
+    "DailyTaskPlan",
     "DecisionLog",
     "DiurnixError",
     "ExecutionReceipt",
@@ -79,6 +81,8 @@ __all__ = [
     "SideEffect",
     "SyntheticBundle",
     "SyntheticClock",
+    "TaskItem",
+    "TaskStatus",
     "TimerFire",
     "ToolCall",
     "ToolRegistry",
