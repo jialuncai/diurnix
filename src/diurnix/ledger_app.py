@@ -97,3 +97,14 @@ def envelope_from_dict(value: dict[str, object]) -> BudgetEnvelope:
     if float(value["available"]) != envelope.available:
         raise ValidationError("budget envelope available value is inconsistent")
     return envelope
+
+
+def apply_expense(envelope: BudgetEnvelope, transaction: Transaction) -> BudgetEnvelope:
+    from dataclasses import replace
+
+    predicted = categorize_transaction(transaction).category
+    if predicted != envelope.category:
+        raise ValidationError("transaction does not belong to budget envelope")
+    if transaction.amount >= 0:
+        raise ValidationError("budget expense must have a negative amount")
+    return replace(envelope, spent=round(envelope.spent + abs(transaction.amount), 2))
