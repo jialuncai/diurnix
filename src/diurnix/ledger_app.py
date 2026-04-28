@@ -71,3 +71,29 @@ class BudgetEnvelope:
     @property
     def available(self) -> float:
         return round(self.allocation + self.rollover - self.spent, 2)
+
+
+def envelope_to_dict(envelope: BudgetEnvelope) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "category": envelope.category,
+        "allocation": envelope.allocation,
+        "spent": envelope.spent,
+        "rollover": envelope.rollover,
+        "available": envelope.available,
+    }
+
+
+def envelope_from_dict(value: dict[str, object]) -> BudgetEnvelope:
+    expected = {"schema_version", "category", "allocation", "spent", "rollover", "available"}
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("budget envelope does not match schema")
+    envelope = BudgetEnvelope(
+        str(value["category"]),
+        float(value["allocation"]),
+        float(value["spent"]),
+        float(value["rollover"]),
+    )
+    if float(value["available"]) != envelope.available:
+        raise ValidationError("budget envelope available value is inconsistent")
+    return envelope
