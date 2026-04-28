@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
+from diurnix.events import Transaction
+
 _CATEGORY_CUES = {
     "groceries": ("市场", "market", "grocery"),
     "transport": ("地铁", "metro", "taxi", "bus"),
@@ -17,3 +21,17 @@ def categorize_merchant(merchant: str) -> tuple[str, tuple[str, ...]]:
         if matched:
             return category, matched
     return "other", ()
+
+
+@dataclass(frozen=True, slots=True)
+class CategoryResult:
+    transaction_id: str
+    category: str
+    confidence: float
+    tells: tuple[str, ...]
+
+
+def categorize_transaction(transaction: Transaction) -> CategoryResult:
+    category, tells = categorize_merchant(transaction.merchant)
+    confidence = 0.99 if tells else 0.25
+    return CategoryResult(transaction.event_id, category, confidence, tells)
