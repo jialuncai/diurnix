@@ -108,3 +108,10 @@ def apply_expense(envelope: BudgetEnvelope, transaction: Transaction) -> BudgetE
     if transaction.amount >= 0:
         raise ValidationError("budget expense must have a negative amount")
     return replace(envelope, spent=round(envelope.spent + abs(transaction.amount), 2))
+
+
+def rollover_envelope(
+    envelope: BudgetEnvelope, next_allocation: float, *, carry_overspend: bool = True
+) -> BudgetEnvelope:
+    carry = envelope.available if carry_overspend else max(0.0, envelope.available)
+    return BudgetEnvelope(envelope.category, next_allocation, rollover=round(carry, 2))
