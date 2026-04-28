@@ -11,3 +11,17 @@ def test_merchant_categorizer_supports_synthetic_chinese_names() -> None:
 
 def test_unknown_merchant_uses_explicit_other_category() -> None:
     assert categorize_merchant("Unmapped Shop") == ("other", ())
+
+
+def test_categorizer_recovers_every_persona_merchant() -> None:
+    from diurnix.persona_factory import create_persona
+
+    persona = create_persona(5)
+    for merchant in persona.merchants:
+        predicted, tells = categorize_merchant(merchant.name)
+        assert predicted == merchant.category
+        assert tells
+
+
+def test_categorizer_is_case_insensitive_for_latin_cues() -> None:
+    assert categorize_merchant("CITY METRO")[0] == "transport"
