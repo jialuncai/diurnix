@@ -35,3 +35,17 @@ def categorize_transaction(transaction: Transaction) -> CategoryResult:
     category, tells = categorize_merchant(transaction.merchant)
     confidence = 0.99 if tells else 0.25
     return CategoryResult(transaction.event_id, category, confidence, tells)
+
+
+def category_metrics(transactions: tuple[Transaction, ...]) -> dict[str, object]:
+    results = tuple(categorize_transaction(item) for item in transactions)
+    correct = sum(
+        result.category == transaction.category
+        for transaction, result in zip(transactions, results, strict=True)
+    )
+    return {
+        "sample_count": len(transactions),
+        "accuracy": round(correct / len(transactions), 6) if transactions else 0.0,
+        "uncertain_count": sum(result.confidence < 0.5 for result in results),
+        "synthetic": True,
+    }
