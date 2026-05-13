@@ -153,3 +153,21 @@ def find_duplicate_transactions(
             ):
                 pairs.append((left, right))
     return tuple(pairs)
+
+
+def category_zscores(transactions: tuple[Transaction, ...]) -> dict[str, float]:
+    import numpy as np
+
+    by_category: dict[str, list[Transaction]] = {}
+    for item in transactions:
+        by_category.setdefault(categorize_transaction(item).category, []).append(item)
+    scores = {}
+    for items in by_category.values():
+        values = np.asarray([abs(item.amount) for item in items], dtype=np.float64)
+        mean = float(values.mean())
+        deviation = float(values.std())
+        for item, value in zip(items, values, strict=True):
+            scores[item.event_id] = (
+                round((float(value) - mean) / deviation, 6) if deviation else 0.0
+            )
+    return scores
