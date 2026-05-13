@@ -171,3 +171,12 @@ def category_zscores(transactions: tuple[Transaction, ...]) -> dict[str, float]:
                 round((float(value) - mean) / deviation, 6) if deviation else 0.0
             )
     return scores
+
+
+def find_zscore_outliers(
+    transactions: tuple[Transaction, ...], *, threshold: float = 3.0
+) -> tuple[Transaction, ...]:
+    if threshold <= 0:
+        raise ValidationError("z-score threshold must be positive")
+    scores = category_zscores(transactions)
+    return tuple(item for item in transactions if scores.get(item.event_id, 0.0) >= threshold)
