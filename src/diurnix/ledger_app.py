@@ -115,3 +115,20 @@ def rollover_envelope(
 ) -> BudgetEnvelope:
     carry = envelope.available if carry_overspend else max(0.0, envelope.available)
     return BudgetEnvelope(envelope.category, next_allocation, rollover=round(carry, 2))
+
+
+def merchant_edit_distance(left: str, right: str) -> int:
+    a, b = left.casefold(), right.casefold()
+    previous = list(range(len(b) + 1))
+    for index, left_char in enumerate(a, start=1):
+        current = [index]
+        for offset, right_char in enumerate(b, start=1):
+            current.append(
+                min(
+                    current[-1] + 1,
+                    previous[offset] + 1,
+                    previous[offset - 1] + (left_char != right_char),
+                )
+            )
+        previous = current
+    return previous[-1]
