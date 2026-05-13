@@ -180,3 +180,18 @@ def find_zscore_outliers(
         raise ValidationError("z-score threshold must be positive")
     scores = category_zscores(transactions)
     return tuple(item for item in transactions if scores.get(item.event_id, 0.0) >= threshold)
+
+
+def ewma_deviations(
+    transactions: tuple[Transaction, ...], *, alpha: float = 0.3
+) -> dict[str, float]:
+    if not 0 < alpha <= 1:
+        raise ValidationError("EWMA alpha must be between zero and one")
+    baselines: dict[str, float] = {}
+    result = {}
+    for item in sorted(transactions, key=lambda value: (value.occurred_at, value.event_id)):
+        amount = abs(item.amount)
+        baseline = baselines.get(item.merchant, amount)
+        result[item.event_id] = round((amount - baseline) / baseline, 6) if baseline else 0.0
+        baselines[item.merchant] = round(alpha * amount + (1 - alpha) * baseline, 6)
+    return result
