@@ -195,3 +195,12 @@ def ewma_deviations(
         result[item.event_id] = round((amount - baseline) / baseline, 6) if baseline else 0.0
         baselines[item.merchant] = round(alpha * amount + (1 - alpha) * baseline, 6)
     return result
+
+
+def find_miscategorizations(transactions: tuple[Transaction, ...]) -> tuple[Transaction, ...]:
+    return tuple(
+        item
+        for item in transactions
+        if categorize_transaction(item).confidence >= 0.5
+        and categorize_transaction(item).category != item.category
+    )
