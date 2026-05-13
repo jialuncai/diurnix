@@ -132,3 +132,24 @@ def merchant_edit_distance(left: str, right: str) -> int:
             )
         previous = current
     return previous[-1]
+
+
+def find_duplicate_transactions(
+    transactions: tuple[Transaction, ...], *, minutes: int = 10, merchant_distance: int = 1
+) -> tuple[tuple[Transaction, Transaction], ...]:
+    if minutes < 0 or merchant_distance < 0:
+        raise ValidationError("duplicate thresholds cannot be negative")
+    ordered = sorted(transactions, key=lambda item: (item.occurred_at, item.event_id))
+    pairs = []
+    for index, left in enumerate(ordered):
+        for right in ordered[index + 1 :]:
+            elapsed = (right.occurred_at - left.occurred_at).total_seconds() / 60
+            if elapsed > minutes:
+                break
+            if (
+                abs(left.amount - right.amount) <= 0.01
+                and left.currency == right.currency
+                and merchant_edit_distance(left.merchant, right.merchant) <= merchant_distance
+            ):
+                pairs.append((left, right))
+    return tuple(pairs)
