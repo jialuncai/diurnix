@@ -20,3 +20,27 @@ def test_miscategory_detector_does_not_guess_unknown_merchants() -> None:
 
     item = Transaction("unknown", datetime(2026, 1, 1, tzinfo=UTC), -5, "CNY", "Elsewhere", "other")
     assert find_miscategorizations((item,)) == ()
+
+
+def test_miscategory_detection_uses_merchant_not_planted_label() -> None:
+    from diurnix.events import AnomalyLabel, Transaction
+
+    item = Transaction(
+        "labeled",
+        datetime(2026, 1, 1, tzinfo=UTC),
+        -5,
+        "CNY",
+        "合成市场",
+        "groceries",
+        AnomalyLabel.MISCATEGORIZED,
+    )
+    assert find_miscategorizations((item,)) == ()
+
+
+def test_wrong_stored_category_is_detected_without_truth_label() -> None:
+    from diurnix.events import Transaction
+
+    item = Transaction(
+        "wrong", datetime(2026, 1, 1, tzinfo=UTC), -5, "CNY", "合成地铁", "groceries"
+    )
+    assert find_miscategorizations((item,)) == (item,)
