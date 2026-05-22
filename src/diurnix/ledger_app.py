@@ -204,3 +204,23 @@ def find_miscategorizations(transactions: tuple[Transaction, ...]) -> tuple[Tran
         if categorize_transaction(item).confidence >= 0.5
         and categorize_transaction(item).category != item.category
     )
+
+
+def find_subscription_creep(
+    transactions: tuple[Transaction, ...], *, minimum_increase: float = 0.05
+) -> tuple[Transaction, ...]:
+    import itertools
+
+    if minimum_increase <= 0:
+        raise ValidationError("subscription increase threshold must be positive")
+    grouped: dict[str, list[Transaction]] = {}
+    for item in transactions:
+        if categorize_transaction(item).category == "subscriptions":
+            grouped.setdefault(item.merchant, []).append(item)
+    detected = []
+    for items in grouped.values():
+        ordered = sorted(items, key=lambda item: (item.occurred_at, item.event_id))
+        for previous, current in itertools.pairwise(ordered):
+            if abs(current.amount) >= abs(previous.amount) * (1 + minimum_increase):
+                detected.append(current)
+    return tuple(sorted(detected, key=lambda item: (item.occurred_at, item.event_id)))
