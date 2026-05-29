@@ -260,3 +260,34 @@ def detect_ledger_anomalies(transactions: tuple[Transaction, ...]) -> tuple[Anom
             "merchant category differs from stored category",
         )
     return tuple(findings[key] for key in sorted(findings))
+
+
+def anomaly_metrics(
+    transactions: tuple[Transaction, ...], findings: tuple[AnomalyFinding, ...]
+) -> dict[str, object]:
+    truth = {
+        item.event_id: item.planted_anomaly
+        for item in transactions
+        if item.planted_anomaly is not AnomalyLabel.NONE
+    }
+    predicted = {item.transaction_id: item.label for item in findings}
+    correct = sum(predicted.get(event_id) is label for event_id, label in truth.items())
+    precision = round(correct / len(predicted), 6) if predicted else 0.0
+    recall = round(correct / len(truth), 6) if truth else 1.0
+    slices = {
+        label.value: {
+            "truth": sum(item is label for item in truth.values()),
+            "predicted": sum(item is label for item in predicted.values()),
+        }
+        for label in AnomalyLabel
+        if label is not AnomalyLabel.NONE
+    }
+    return {
+        "transaction_count": len(transactions),
+        "truth_count": len(truth),
+        "finding_count": len(predicted),
+        "precision": precision,
+        "recall": recall,
+        "slices": slices,
+        "synthetic": True,
+    }
