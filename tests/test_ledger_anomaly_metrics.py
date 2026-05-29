@@ -20,3 +20,20 @@ def test_anomaly_metrics_are_derived_from_planted_truth() -> None:
 def test_empty_anomaly_truth_has_defined_metrics() -> None:
     metrics = anomaly_metrics((), ())
     assert metrics["precision"] == 0.0 and metrics["recall"] == 1.0
+
+
+def test_anomaly_metrics_keep_every_nonempty_label_slice() -> None:
+    transactions = generate_planted_ledger_month(
+        create_persona(7), 7, datetime(2026, 1, 1, tzinfo=UTC)
+    )
+    slices = anomaly_metrics(transactions, detect_ledger_anomalies(transactions))["slices"]
+    assert tuple(slices) == ("duplicate", "outlier", "subscription_creep", "miscategorized")
+    assert all(row["truth"] >= 1 for row in slices.values())
+
+
+def test_anomaly_measurement_is_reproducible() -> None:
+    transactions = generate_planted_ledger_month(
+        create_persona(11), 11, datetime(2026, 1, 1, tzinfo=UTC)
+    )
+    findings = detect_ledger_anomalies(transactions)
+    assert anomaly_metrics(transactions, findings) == anomaly_metrics(transactions, findings)
