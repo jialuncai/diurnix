@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from diurnix.errors import ValidationError
-from diurnix.events import Transaction
+from diurnix.events import AnomalyLabel, Transaction
 
 _CATEGORY_CUES = {
     "groceries": ("市场", "market", "grocery"),
@@ -224,3 +224,39 @@ def find_subscription_creep(
             if abs(current.amount) >= abs(previous.amount) * (1 + minimum_increase):
                 detected.append(current)
     return tuple(sorted(detected, key=lambda item: (item.occurred_at, item.event_id)))
+
+
+@dataclass(frozen=True, slots=True)
+class AnomalyFinding:
+    transaction_id: str
+    label: AnomalyLabel
+    score: float
+    reason: str
+
+
+def detect_ledger_anomalies(transactions: tuple[Transaction, ...]) -> tuple[AnomalyFinding, ...]:
+    findings: dict[str, AnomalyFinding] = {}
+    for _, duplicate in find_duplicate_transactions(transactions):
+        findings[duplicate.event_id] = AnomalyFinding(
+            duplicate.event_id, AnomalyLabel.DUPLICATE, 1.0, "near-time amount and merchant match"
+        )
+    scores = category_zscores(transactions)
+    for item in find_zscore_outliers(transactions, threshold=2.5):
+        findings[item.event_id] = AnomalyFinding(
+            item.event_id, AnomalyLabel.OUTLIER, scores[item.event_id], "category z-score threshold"
+        )
+    for item in find_subscription_creep(transactions):
+        findings[item.event_id] = AnomalyFinding(
+            item.event_id,
+            AnomalyLabel.SUBSCRIPTION_CREEP,
+            1.0,
+            "recurring charge increased above threshold",
+        )
+    for item in find_miscategorizations(transactions):
+        findings[item.event_id] = AnomalyFinding(
+            item.event_id,
+            AnomalyLabel.MISCATEGORIZED,
+            1.0,
+            "merchant category differs from stored category",
+        )
+    return tuple(findings[key] for key in sorted(findings))
