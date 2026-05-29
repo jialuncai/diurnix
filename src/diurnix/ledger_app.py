@@ -291,3 +291,20 @@ def anomaly_metrics(
         "slices": slices,
         "synthetic": True,
     }
+
+
+def monthly_ledger_summary(
+    transactions: tuple[Transaction, ...], findings: tuple[AnomalyFinding, ...]
+) -> dict[str, object]:
+    spending: dict[str, float] = {}
+    for item in transactions:
+        if item.amount < 0:
+            category = categorize_transaction(item).category
+            spending[category] = round(spending.get(category, 0.0) + abs(item.amount), 2)
+    return {
+        "transaction_count": len(transactions),
+        "total_spending": round(sum(spending.values()), 2),
+        "category_spending": dict(sorted(spending.items())),
+        "anomaly_count": len(findings),
+        "synthetic": True,
+    }
