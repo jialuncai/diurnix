@@ -336,3 +336,39 @@ def ledger_svg(summary: dict[str, object], *, width: int = 480, bar_height: int 
         )
     rows.append("</svg>")
     return "".join(rows)
+
+
+def monthly_ledger_digest(summary: dict[str, object]) -> str:
+    lines = [
+        "# 家庭账本月报",
+        "",
+        f"交易数: {summary['transaction_count']}",
+        f"支出合计: {float(summary['total_spending']):.2f}",
+        f"异常数: {summary['anomaly_count']}",
+        "",
+        "## 分类支出",
+    ]
+    spending = summary["category_spending"]
+    lines.extend(f"- {category}: {float(value):.2f}" for category, value in spending.items())
+    if not spending:
+        lines.append("- 无")
+    return "\n".join(lines) + "\n"
+
+
+def ledger_analysis_manifest(
+    transactions: tuple[Transaction, ...], findings: tuple[AnomalyFinding, ...], seed: int
+) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    summary = monthly_ledger_summary(transactions, findings)
+    metrics = anomaly_metrics(transactions, findings)
+    return {
+        "kind": "ledger.analysis",
+        "schema_version": 1,
+        "seed": seed,
+        "synthetic": True,
+        "summary": summary,
+        "metrics": metrics,
+        "svg_checksum": content_checksum(ledger_svg(summary)),
+        "digest_checksum": content_checksum(monthly_ledger_digest(summary)),
+    }
