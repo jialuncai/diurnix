@@ -308,3 +308,31 @@ def monthly_ledger_summary(
         "anomaly_count": len(findings),
         "synthetic": True,
     }
+
+
+def ledger_svg(summary: dict[str, object], *, width: int = 480, bar_height: int = 24) -> str:
+    from html import escape
+
+    if width < 200 or bar_height < 8:
+        raise ValidationError("ledger SVG dimensions are too small")
+    spending = summary["category_spending"]
+    if not isinstance(spending, dict):
+        raise ValidationError("ledger category spending must be a mapping")
+    maximum = max((float(value) for value in spending.values()), default=1.0)
+    height = 40 + len(spending) * (bar_height + 8)
+    rows = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" role="img">'
+    ]
+    rows.append('<rect width="100%" height="100%" fill="white"/>')
+    for index, (category, value) in enumerate(sorted(spending.items())):
+        y = 24 + index * (bar_height + 8)
+        bar_width = round((width - 180) * float(value) / maximum, 2)
+        rows.append(f'<text x="8" y="{y + 16}" font-size="12">{escape(str(category))}</text>')
+        rows.append(
+            f'<rect x="140" y="{y}" width="{bar_width}" height="{bar_height}" fill="#315f8c"/>'
+        )
+        rows.append(
+            f'<text x="{148 + bar_width}" y="{y + 16}" font-size="12">{float(value):.2f}</text>'
+        )
+    rows.append("</svg>")
+    return "".join(rows)
