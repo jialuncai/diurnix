@@ -30,10 +30,13 @@ def test_module_imports_in_fresh_interpreter() -> None:
 def test_foundation_public_api_is_explicit_and_importable() -> None:
     expected = {
         "ApprovalQueue",
+        "AnomalyFinding",
         "ApprovalStatus",
         "ArtifactEnvelope",
         "Budget",
+        "BudgetEnvelope",
         "CalendarEntry",
+        "CategoryResult",
         "DailyTaskPlan",
         "DecisionLog",
         "DiurnixError",

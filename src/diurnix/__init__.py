@@ -19,6 +19,7 @@ from diurnix.events import (
 from diurnix.executor import ExecutionReceipt, ExecutionStatus, Executor, RetryConfig
 from diurnix.factory import SyntheticBundle, generate_bundle
 from diurnix.inbox_app import TriageResult
+from diurnix.ledger_app import AnomalyFinding, BudgetEnvelope, CategoryResult
 from diurnix.loop import LoopPhase, LoopState
 from diurnix.memory import MemoryNote, MemoryScope, MemoryStore, PrivacyTier
 from diurnix.persona import Persona
@@ -35,11 +36,14 @@ from diurnix.tools import SideEffect, ToolSpec
 from diurnix.traces import LoopTrace, TraceEntry
 
 __all__ = [
+    "AnomalyFinding",
     "ApprovalQueue",
     "ApprovalStatus",
     "ArtifactEnvelope",
     "Budget",
+    "BudgetEnvelope",
     "CalendarEntry",
+    "CategoryResult",
     "DailyTaskPlan",
     "DecisionLog",
     "DiurnixError",
