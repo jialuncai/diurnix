@@ -60,3 +60,12 @@ def calculate_streak(events: tuple[HabitCheckIn, ...], *, grace_days: int = 0) -
         longest = max(longest, current)
         previous_day = day
     return StreakSummary(habit, current, longest, done_days, grace_used)
+
+
+def streak_for_goal(events: tuple[HabitCheckIn, ...], goal: object) -> StreakSummary:
+    from diurnix.persona import HabitGoal
+
+    if not isinstance(goal, HabitGoal):
+        raise ValidationError("streak goal has wrong type")
+    selected = tuple(event for event in events if event.habit == goal.name)
+    return calculate_streak(selected, grace_days=goal.grace_days)
