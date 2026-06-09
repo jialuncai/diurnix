@@ -35,3 +35,21 @@ def test_streak_tracks_current_and_longest_runs() -> None:
 def test_empty_streak_has_explicit_zero_summary() -> None:
     summary = calculate_streak(())
     assert summary.current == 0 and summary.longest == 0 and summary.habit == ""
+
+
+def test_missing_local_date_breaks_streak() -> None:
+    events = (_event(0, HabitStatus.DONE), _event(2, HabitStatus.DONE))
+    summary = calculate_streak(events)
+    assert summary.current == 1 and summary.longest == 1
+
+
+def test_streak_rejects_mixed_habits() -> None:
+    from dataclasses import replace
+
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    first = _event(0, HabitStatus.DONE)
+    with pytest.raises(ValidationError, match="one habit"):
+        calculate_streak((first, replace(_event(1, HabitStatus.DONE), habit="步行")))
