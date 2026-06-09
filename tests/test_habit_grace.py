@@ -32,3 +32,25 @@ def test_skip_without_grace_breaks_streak() -> None:
         _event(2, HabitStatus.DONE),
     )
     assert calculate_streak(events).current == 1
+
+
+def test_second_skip_beyond_grace_resets_streak() -> None:
+    events = (
+        _event(0, HabitStatus.DONE),
+        _event(1, HabitStatus.SKIPPED),
+        _event(2, HabitStatus.SKIPPED),
+        _event(3, HabitStatus.DONE),
+    )
+    summary = calculate_streak(events, grace_days=1)
+    assert summary.current == 1 and summary.longest == 2
+
+
+def test_grace_budget_resets_after_a_real_break() -> None:
+    events = (
+        _event(0, HabitStatus.SKIPPED),
+        _event(1, HabitStatus.MISSED),
+        _event(2, HabitStatus.SKIPPED),
+        _event(3, HabitStatus.DONE),
+    )
+    summary = calculate_streak(events, grace_days=1)
+    assert summary.current == 2 and summary.grace_days_used == 2
