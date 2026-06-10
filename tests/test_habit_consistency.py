@@ -32,3 +32,11 @@ def test_consistency_meets_weekly_target_at_one() -> None:
 def test_consistency_validates_target() -> None:
     with pytest.raises(ValidationError, match="one to seven"):
         habit_consistency((), 0)
+
+
+def test_consistency_caps_above_target_at_one() -> None:
+    assert habit_consistency(_events(set(range(7))), 3) == 1.0
+
+
+def test_empty_consistency_is_zero() -> None:
+    assert habit_consistency((), 5) == 0.0
