@@ -69,3 +69,17 @@ def streak_for_goal(events: tuple[HabitCheckIn, ...], goal: object) -> StreakSum
         raise ValidationError("streak goal has wrong type")
     selected = tuple(event for event in events if event.habit == goal.name)
     return calculate_streak(selected, grace_days=goal.grace_days)
+
+
+def habit_consistency(events: tuple[HabitCheckIn, ...], target_days_per_week: int) -> float:
+    if not 1 <= target_days_per_week <= 7:
+        raise ValidationError("habit target must be from one to seven")
+    if not events:
+        return 0.0
+    ordered = next(iter(group_habit_checkins(events).values()))
+    span_days = (
+        date.fromisoformat(ordered[-1].local_date) - date.fromisoformat(ordered[0].local_date)
+    ).days + 1
+    expected = target_days_per_week * span_days / 7
+    done = sum(event.status is HabitStatus.DONE for event in ordered)
+    return round(min(1.0, done / expected), 6) if expected else 0.0
