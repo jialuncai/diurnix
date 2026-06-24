@@ -23,3 +23,16 @@ def test_lapse_metrics_report_planted_recall() -> None:
 
 def test_empty_lapse_truth_has_defined_recall() -> None:
     assert lapse_recovery_metrics((), ())["recall"] == 1.0
+
+
+def test_seeded_lapse_metrics_are_reproducible() -> None:
+    events = _events()
+    spans = detect_lapse_spans(events)
+    assert lapse_recovery_metrics(events, spans) == lapse_recovery_metrics(events, spans)
+
+
+def test_detected_lapse_spans_are_chronological() -> None:
+    spans = detect_lapse_spans(_events())
+    assert tuple((span.habit, span.starts_on) for span in spans) == tuple(
+        sorted((span.habit, span.starts_on) for span in spans)
+    )
