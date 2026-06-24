@@ -83,3 +83,48 @@ def habit_consistency(events: tuple[HabitCheckIn, ...], target_days_per_week: in
     expected = target_days_per_week * span_days / 7
     done = sum(event.status is HabitStatus.DONE for event in ordered)
     return round(min(1.0, done / expected), 6) if expected else 0.0
+
+
+@dataclass(frozen=True, slots=True)
+class LapseSpan:
+    habit: str
+    starts_on: str
+    ends_on: str
+    event_ids: tuple[str, ...]
+
+
+def detect_lapse_spans(
+    events: tuple[HabitCheckIn, ...], *, minimum_days: int = 2
+) -> tuple[LapseSpan, ...]:
+    if minimum_days < 1:
+        raise ValidationError("lapse minimum days must be positive")
+    spans = []
+    for habit, ordered in group_habit_checkins(events).items():
+        run: list[HabitCheckIn] = []
+        for event in (*ordered, None):
+            consecutive = (
+                event is not None
+                and event.status is HabitStatus.MISSED
+                and (
+                    not run
+                    or (
+                        date.fromisoformat(event.local_date)
+                        - date.fromisoformat(run[-1].local_date)
+                    ).days
+                    == 1
+                )
+            )
+            if consecutive:
+                run.append(event)
+                continue
+            if len(run) >= minimum_days:
+                spans.append(
+                    LapseSpan(
+                        habit,
+                        run[0].local_date,
+                        run[-1].local_date,
+                        tuple(item.event_id for item in run),
+                    )
+                )
+            run = [event] if event is not None and event.status is HabitStatus.MISSED else []
+    return tuple(spans)
