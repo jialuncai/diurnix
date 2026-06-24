@@ -143,3 +143,15 @@ def lapse_recovery_metrics(
         "recall": round(true_positive / len(truth), 6) if truth else 1.0,
         "synthetic": True,
     }
+
+
+@dataclass(frozen=True, slots=True)
+class HabitLoop:
+    habit: str
+    cue: str
+    routine: str
+    reward: str
+
+    def __post_init__(self) -> None:
+        if not all(value.strip() for value in (self.habit, self.cue, self.routine, self.reward)):
+            raise ValidationError("habit loop fields must not be blank")
