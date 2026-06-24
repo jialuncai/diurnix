@@ -128,3 +128,18 @@ def detect_lapse_spans(
                 )
             run = [event] if event is not None and event.status is HabitStatus.MISSED else []
     return tuple(spans)
+
+
+def lapse_recovery_metrics(
+    events: tuple[HabitCheckIn, ...], spans: tuple[LapseSpan, ...]
+) -> dict[str, object]:
+    truth = {event.event_id for event in events if event.planted_lapse}
+    predicted = {event_id for span in spans for event_id in span.event_ids}
+    true_positive = len(truth & predicted)
+    return {
+        "planted_count": len(truth),
+        "predicted_count": len(predicted),
+        "precision": round(true_positive / len(predicted), 6) if predicted else 0.0,
+        "recall": round(true_positive / len(truth), 6) if truth else 1.0,
+        "synthetic": True,
+    }
