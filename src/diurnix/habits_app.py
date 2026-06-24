@@ -155,3 +155,22 @@ class HabitLoop:
     def __post_init__(self) -> None:
         if not all(value.strip() for value in (self.habit, self.cue, self.routine, self.reward)):
             raise ValidationError("habit loop fields must not be blank")
+
+
+def habit_loop_to_dict(loop: HabitLoop) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "habit": loop.habit,
+        "cue": loop.cue,
+        "routine": loop.routine,
+        "reward": loop.reward,
+    }
+
+
+def habit_loop_from_dict(value: dict[str, object]) -> HabitLoop:
+    expected = {"schema_version", "habit", "cue", "routine", "reward"}
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("habit loop does not match schema")
+    return HabitLoop(
+        str(value["habit"]), str(value["cue"]), str(value["routine"]), str(value["reward"])
+    )
