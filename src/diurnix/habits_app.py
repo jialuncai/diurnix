@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, time, timedelta
 
 from diurnix.errors import ValidationError
 from diurnix.events import HabitCheckIn, HabitStatus
@@ -174,3 +174,43 @@ def habit_loop_from_dict(value: dict[str, object]) -> HabitLoop:
     return HabitLoop(
         str(value["habit"]), str(value["cue"]), str(value["routine"]), str(value["reward"])
     )
+
+
+@dataclass(frozen=True, slots=True)
+class RoutineSchedule:
+    habit: str
+    starts_at: datetime
+    ends_at: datetime
+
+
+def schedule_routine(
+    goal: object,
+    day: date,
+    calendar: tuple[object, ...],
+    timezone_name: str,
+    *,
+    duration_minutes: int = 20,
+    search_minutes: int = 180,
+) -> RoutineSchedule | None:
+    from diurnix.calendar import local_datetime
+    from diurnix.calendar_app import intervals_conflict
+    from diurnix.events import CalendarEntry
+    from diurnix.persona import HabitGoal
+
+    if not isinstance(goal, HabitGoal):
+        raise ValidationError("routine goal has wrong type")
+    if duration_minutes < 1 or search_minutes < 0:
+        raise ValidationError("routine schedule bounds are invalid")
+    preferred = local_datetime(day, time(goal.preferred_hour), timezone_name)
+    for offset in range(0, search_minutes + 1, 15):
+        starts_at = preferred + timedelta(minutes=offset)
+        ends_at = starts_at + timedelta(minutes=duration_minutes)
+        candidate = CalendarEntry(
+            "routine_candidate", starts_at, goal.name, starts_at, ends_at, "routine"
+        )
+        if not any(
+            isinstance(entry, CalendarEntry) and intervals_conflict(candidate, entry)
+            for entry in calendar
+        ):
+            return RoutineSchedule(goal.name, starts_at, ends_at)
+    return None
