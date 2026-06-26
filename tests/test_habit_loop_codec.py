@@ -11,3 +11,25 @@ def test_habit_loop_mapping_roundtrips() -> None:
 def test_habit_loop_mapping_has_golden_keys() -> None:
     encoded = habit_loop_to_dict(HabitLoop("阅读", "晚饭后", "十分钟", "记录"))
     assert list(encoded) == ["schema_version", "habit", "cue", "routine", "reward"]
+
+
+def test_habit_loop_codec_rejects_extensions() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = habit_loop_to_dict(HabitLoop("阅读", "晚饭后", "十分钟", "记录"))
+    encoded["extra"] = True
+    with pytest.raises(ValidationError, match="schema"):
+        habit_loop_from_dict(encoded)
+
+
+def test_habit_loop_codec_reuses_blank_validation() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = habit_loop_to_dict(HabitLoop("阅读", "晚饭后", "十分钟", "记录"))
+    encoded["reward"] = " "
+    with pytest.raises(ValidationError, match="blank"):
+        habit_loop_from_dict(encoded)
