@@ -30,3 +30,29 @@ def test_routine_schedule_moves_after_calendar_conflict() -> None:
 def test_routine_schedule_validates_duration() -> None:
     with pytest.raises(ValidationError, match="bounds"):
         schedule_routine(GOAL, DAY, (), "Asia/Shanghai", duration_minutes=0)
+
+
+def test_routine_schedule_returns_none_when_search_window_is_blocked() -> None:
+    preferred = schedule_routine(GOAL, DAY, (), "Asia/Shanghai")
+    assert preferred is not None
+    blocker = CalendarEntry(
+        "blocker",
+        preferred.starts_at,
+        "long meeting",
+        preferred.starts_at,
+        preferred.starts_at + timedelta(hours=4),
+    )
+    assert schedule_routine(GOAL, DAY, (blocker,), "Asia/Shanghai", search_minutes=180) is None
+
+
+def test_routine_schedule_uses_first_available_quarter_hour() -> None:
+    preferred = schedule_routine(GOAL, DAY, (), "Asia/Shanghai")
+    blocker = CalendarEntry(
+        "blocker",
+        preferred.starts_at,
+        "short",
+        preferred.starts_at,
+        preferred.starts_at + timedelta(minutes=35),
+    )
+    moved = schedule_routine(GOAL, DAY, (blocker,), "Asia/Shanghai")
+    assert moved.starts_at == preferred.starts_at + timedelta(minutes=45)
