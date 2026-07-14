@@ -249,3 +249,38 @@ def habit_nudge(summary: StreakSummary, schedule: RoutineSchedule | None) -> str
     if summary.current == 0:
         return f"{habit}: {local_time} 从一个小步骤重新开始。"
     return f"{habit}: {local_time} 继续当前 {summary.current} 天连续记录。"
+
+
+def habit_heatmap_svg(events: tuple[HabitCheckIn, ...], *, cell_size: int = 14) -> str:
+    from html import escape
+
+    if cell_size < 8:
+        raise ValidationError("habit heatmap cell size is too small")
+    grouped = group_habit_checkins(events)
+    dates = sorted({event.local_date for event in events})
+    width = 130 + max(1, len(dates)) * cell_size
+    height = 30 + max(1, len(grouped)) * (cell_size + 6)
+    colors = {
+        HabitStatus.DONE: "#2f855a",
+        HabitStatus.SKIPPED: "#d69e2e",
+        HabitStatus.MISSED: "#c53030",
+    }
+    rows = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" role="img">'
+    ]
+    rows.append('<rect width="100%" height="100%" fill="white"/>')
+    for row, (habit, items) in enumerate(grouped.items()):
+        y = 20 + row * (cell_size + 6)
+        rows.append(f'<text x="4" y="{y + 11}" font-size="11">{escape(habit)}</text>')
+        by_date = {item.local_date: item for item in items}
+        for column, local_day in enumerate(dates):
+            item = by_date.get(local_day)
+            color = colors[item.status] if item else "#e2e8f0"
+            x = 120 + column * cell_size
+            rows.append(
+                f'<rect x="{x}" y="{y}" width="{cell_size - 2}"'
+                f' height="{cell_size - 2}" fill="{color}">'
+                f"<title>{escape(habit)} {local_day}</title></rect>"
+            )
+    rows.append("</svg>")
+    return "".join(rows)
