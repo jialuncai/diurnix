@@ -237,3 +237,15 @@ def routine_schedule_from_dict(value: dict[str, object]) -> RoutineSchedule:
     if starts_at.tzinfo is None or ends_at.tzinfo is None or ends_at <= starts_at:
         raise ValidationError("routine schedule bounds are invalid")
     return RoutineSchedule(str(value["habit"]), starts_at, ends_at)
+
+
+def habit_nudge(summary: StreakSummary, schedule: RoutineSchedule | None) -> str:
+    from html import escape
+
+    habit = escape(summary.habit, quote=True)
+    if schedule is None:
+        return f"{habit}: 今天没有可用时段\N{FULLWIDTH COMMA}请手动选择一个短时段。"
+    local_time = schedule.starts_at.strftime("%H:%M")
+    if summary.current == 0:
+        return f"{habit}: {local_time} 从一个小步骤重新开始。"
+    return f"{habit}: {local_time} 继续当前 {summary.current} 天连续记录。"
