@@ -214,3 +214,26 @@ def schedule_routine(
         ):
             return RoutineSchedule(goal.name, starts_at, ends_at)
     return None
+
+
+def routine_schedule_to_dict(schedule: RoutineSchedule) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "habit": schedule.habit,
+        "starts_at": schedule.starts_at.isoformat(),
+        "ends_at": schedule.ends_at.isoformat(),
+    }
+
+
+def routine_schedule_from_dict(value: dict[str, object]) -> RoutineSchedule:
+    expected = {"schema_version", "habit", "starts_at", "ends_at"}
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("routine schedule does not match schema")
+    try:
+        starts_at = datetime.fromisoformat(str(value["starts_at"]))
+        ends_at = datetime.fromisoformat(str(value["ends_at"]))
+    except ValueError as error:
+        raise ValidationError("routine schedule time is invalid") from error
+    if starts_at.tzinfo is None or ends_at.tzinfo is None or ends_at <= starts_at:
+        raise ValidationError("routine schedule bounds are invalid")
+    return RoutineSchedule(str(value["habit"]), starts_at, ends_at)
