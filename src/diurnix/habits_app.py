@@ -308,3 +308,22 @@ def habit_consistency_report(
             }
         )
     return {"habit_count": len(rows), "habits": rows, "synthetic": True}
+
+
+def habit_consistency_digest(report: dict[str, object], lapse_metrics: dict[str, object]) -> str:
+    lines = [
+        "# 习惯一致性报告",
+        "",
+        f"习惯数: {report['habit_count']}",
+        f"种植断档召回率: {float(lapse_metrics['recall']):.2%}",
+        "",
+        "## 各习惯",
+    ]
+    for row in report["habits"]:
+        lines.append(
+            f"- {row['habit']}: 一致性 {float(row['consistency']):.2%}, "
+            f"当前连续 {row['current_streak']} 天"
+        )
+    if not report["habits"]:
+        lines.append("- 无")
+    return "\n".join(lines) + "\n"
