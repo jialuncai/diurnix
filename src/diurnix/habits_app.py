@@ -284,3 +284,27 @@ def habit_heatmap_svg(events: tuple[HabitCheckIn, ...], *, cell_size: int = 14) 
             )
     rows.append("</svg>")
     return "".join(rows)
+
+
+def habit_consistency_report(
+    events: tuple[HabitCheckIn, ...], goals: tuple[object, ...]
+) -> dict[str, object]:
+    from diurnix.persona import HabitGoal
+
+    rows = []
+    for goal in goals:
+        if not isinstance(goal, HabitGoal):
+            raise ValidationError("habit report goal has wrong type")
+        selected = tuple(event for event in events if event.habit == goal.name)
+        streak = calculate_streak(selected, grace_days=goal.grace_days)
+        rows.append(
+            {
+                "habit": goal.name,
+                "checkin_count": len(selected),
+                "consistency": habit_consistency(selected, goal.target_days_per_week),
+                "current_streak": streak.current,
+                "longest_streak": streak.longest,
+                "grace_days_used": streak.grace_days_used,
+            }
+        )
+    return {"habit_count": len(rows), "habits": rows, "synthetic": True}
