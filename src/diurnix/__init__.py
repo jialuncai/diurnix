@@ -18,6 +18,7 @@ from diurnix.events import (
 )
 from diurnix.executor import ExecutionReceipt, ExecutionStatus, Executor, RetryConfig
 from diurnix.factory import SyntheticBundle, generate_bundle
+from diurnix.habits_app import HabitLoop, RoutineSchedule, StreakSummary
 from diurnix.inbox_app import TriageResult
 from diurnix.ledger_app import AnomalyFinding, BudgetEnvelope, CategoryResult
 from diurnix.loop import LoopPhase, LoopState
@@ -51,6 +52,7 @@ __all__ = [
     "ExecutionStatus",
     "Executor",
     "HabitCheckIn",
+    "HabitLoop",
     "InboxMessage",
     "InputRef",
     "IntegrityError",
@@ -77,12 +79,14 @@ __all__ = [
     "RescheduleProposal",
     "RetryConfig",
     "RouteResult",
+    "RoutineSchedule",
     "SeededRandom",
     "SessionEntry",
     "SessionFileRecorder",
     "SessionRecorder",
     "SessionReplayer",
     "SideEffect",
+    "StreakSummary",
     "SyntheticBundle",
     "SyntheticClock",
     "TaskItem",
