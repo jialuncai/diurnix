@@ -327,3 +327,21 @@ def habit_consistency_digest(report: dict[str, object], lapse_metrics: dict[str,
     if not report["habits"]:
         lines.append("- 无")
     return "\n".join(lines) + "\n"
+
+
+def habit_analysis_manifest(
+    events: tuple[HabitCheckIn, ...], report: dict[str, object], seed: int
+) -> dict[str, object]:
+    from diurnix.integrity import content_checksum
+
+    spans = detect_lapse_spans(events)
+    metrics = lapse_recovery_metrics(events, spans)
+    return {
+        "kind": "habits.analysis",
+        "schema_version": 1,
+        "seed": seed,
+        "synthetic": True,
+        "metrics": metrics,
+        "report_checksum": content_checksum(report),
+        "heatmap_checksum": content_checksum(habit_heatmap_svg(events)),
+    }
