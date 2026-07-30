@@ -23,3 +23,15 @@ def test_bench_config_validates_seed_time_and_budgets() -> None:
         BenchConfig(1, datetime(2026, 1, 1))
     with pytest.raises(ValidationError, match="budgets"):
         BenchConfig(1, START, max_task_minutes=-1)
+
+
+def test_same_bench_config_produces_same_bundle() -> None:
+    config = BenchConfig(19, START)
+    assert create_bench_bundle(config) == create_bench_bundle(config)
+
+
+def test_different_bench_seeds_change_bundle_identity() -> None:
+    assert (
+        create_bench_bundle(BenchConfig(1, START)).persona.persona_id
+        != create_bench_bundle(BenchConfig(2, START)).persona.persona_id
+    )
