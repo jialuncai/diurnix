@@ -41,3 +41,18 @@ def score_bench_inbox(bundle: SyntheticBundle) -> dict[str, object]:
         "ambiguous_count": 0,
         "synthetic": True,
     }
+
+
+def score_bench_calendar(bundle: SyntheticBundle) -> dict[str, object]:
+    from diurnix.calendar_app import calendar_conflict_metrics, propose_conflict_resolutions
+
+    metrics = calendar_conflict_metrics(bundle.calendar)
+    proposals = propose_conflict_resolutions(bundle.calendar, bundle.persona)
+    return {
+        "app": "calendar",
+        "sample_count": metrics["entry_count"],
+        "score": metrics["recall"],
+        "precision": metrics["precision"],
+        "proposal_count": len(proposals),
+        "synthetic": True,
+    }
