@@ -56,3 +56,18 @@ def score_bench_calendar(bundle: SyntheticBundle) -> dict[str, object]:
         "proposal_count": len(proposals),
         "synthetic": True,
     }
+
+
+def score_bench_ledger(bundle: SyntheticBundle) -> dict[str, object]:
+    from diurnix.ledger_app import anomaly_metrics, detect_ledger_anomalies
+
+    findings = detect_ledger_anomalies(bundle.ledger)
+    metrics = anomaly_metrics(bundle.ledger, findings)
+    return {
+        "app": "ledger",
+        "sample_count": metrics["transaction_count"],
+        "score": metrics["recall"],
+        "precision": metrics["precision"],
+        "finding_count": metrics["finding_count"],
+        "synthetic": True,
+    }
