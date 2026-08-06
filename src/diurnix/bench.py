@@ -27,3 +27,17 @@ class BenchConfig:
 
 def create_bench_bundle(config: BenchConfig) -> SyntheticBundle:
     return generate_bundle(config.seed, config.start)
+
+
+def score_bench_inbox(bundle: SyntheticBundle) -> dict[str, object]:
+    from diurnix.inbox_app import triage_inbox, triage_metrics
+
+    results = triage_inbox(bundle.inbox)
+    metrics = triage_metrics(bundle.inbox, results)
+    return {
+        "app": "inbox",
+        "sample_count": metrics["sample_count"],
+        "score": metrics["accuracy"],
+        "ambiguous_count": 0,
+        "synthetic": True,
+    }
