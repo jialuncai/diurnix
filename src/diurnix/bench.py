@@ -92,3 +92,45 @@ def score_bench_habits(bundle: SyntheticBundle) -> dict[str, object]:
         "lapse_span_count": len(spans),
         "synthetic": True,
     }
+
+
+def score_bench_tasks(bundle: SyntheticBundle, config: BenchConfig) -> dict[str, object]:
+    from datetime import timedelta
+
+    from diurnix.events import InboxLabel
+    from diurnix.tasks_app import TaskStatus, build_daily_task_plan, make_task
+
+    action_messages = tuple(
+        message for message in bundle.inbox if message.planted_label is InboxLabel.ACTION_REQUIRED
+    )[:6]
+    tasks = tuple(
+        make_task(
+            f"task_{message.event_id}",
+            message.subject,
+            config.start,
+            deadline=config.start + timedelta(days=1),
+            importance=max(1, message.priority),
+            effort_minutes=30,
+            status=TaskStatus.NEXT,
+        )
+        for message in action_messages
+    )
+    plan = build_daily_task_plan(
+        tasks,
+        bundle.calendar,
+        bundle.persona,
+        config.start.date(),
+        config.start,
+        max_tasks=config.max_task_count,
+        max_effort_minutes=config.max_task_minutes,
+    )
+    score = round(len(plan.slots) / len(tasks), 6) if tasks else 1.0
+    return {
+        "app": "tasks",
+        "sample_count": len(tasks),
+        "score": score,
+        "scheduled_count": len(plan.slots),
+        "effort_minutes": plan.effort_minutes,
+        "budget_adherent": plan.effort_minutes <= config.max_task_minutes,
+        "synthetic": True,
+    }
