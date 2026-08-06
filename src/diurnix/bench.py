@@ -71,3 +71,24 @@ def score_bench_ledger(bundle: SyntheticBundle) -> dict[str, object]:
         "finding_count": metrics["finding_count"],
         "synthetic": True,
     }
+
+
+def score_bench_habits(bundle: SyntheticBundle) -> dict[str, object]:
+    from diurnix.habits_app import (
+        detect_lapse_spans,
+        habit_consistency_report,
+        lapse_recovery_metrics,
+    )
+
+    spans = detect_lapse_spans(bundle.habits)
+    metrics = lapse_recovery_metrics(bundle.habits, spans)
+    report = habit_consistency_report(bundle.habits, bundle.persona.habit_goals)
+    consistency = [float(item["consistency"]) for item in report["habits"]]
+    return {
+        "app": "habits",
+        "sample_count": len(bundle.habits),
+        "score": metrics["recall"],
+        "mean_consistency": round(sum(consistency) / len(consistency), 6) if consistency else 0.0,
+        "lapse_span_count": len(spans),
+        "synthetic": True,
+    }
