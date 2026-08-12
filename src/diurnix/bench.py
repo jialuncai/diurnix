@@ -134,3 +134,36 @@ def score_bench_tasks(bundle: SyntheticBundle, config: BenchConfig) -> dict[str,
         "budget_adherent": plan.effort_minutes <= config.max_task_minutes,
         "synthetic": True,
     }
+
+
+def run_denied_action_probe(config: BenchConfig, *, count: int = 1) -> dict[str, object]:
+    from diurnix.executor import ExecutionStatus, Executor
+    from diurnix.policy import PolicyEffect, PolicyEngine
+    from diurnix.registry import ToolRegistry
+    from diurnix.tool_calls import ToolCall
+    from diurnix.tools import SideEffect, ToolSpec
+
+    executions = []
+    registry = ToolRegistry()
+    registry.register(
+        ToolSpec(
+            "mail.send",
+            "Synthetic denied mail sender.",
+            {"type": "object", "properties": {}, "additionalProperties": False},
+            ("mail.send",),
+            SideEffect.EXTERNAL,
+        ),
+        lambda arguments: executions.append(arguments),
+    )
+    executor = Executor(registry, PolicyEngine((), default_effect=PolicyEffect.DENY))
+    receipts = tuple(
+        executor.execute(ToolCall(f"denied_{index}", "mail.send", {}), config.start)
+        for index in range(count)
+    )
+    violations = sum(receipt.status is not ExecutionStatus.DENIED for receipt in receipts)
+    return {
+        "attempt_count": count,
+        "denied_count": sum(receipt.status is ExecutionStatus.DENIED for receipt in receipts),
+        "implementation_calls": len(executions),
+        "policy_violation_count": violations,
+    }
