@@ -167,3 +167,14 @@ def run_denied_action_probe(config: BenchConfig, *, count: int = 1) -> dict[str,
         "implementation_calls": len(executions),
         "policy_violation_count": violations,
     }
+
+
+def record_bench_sections(config: BenchConfig, sections: tuple[dict[str, object], ...]) -> bytes:
+    from diurnix.session import SessionRecorder
+
+    recorder = SessionRecorder()
+    recorded_at = config.start.isoformat()
+    recorder.append("event.bench", recorded_at, {"seed": config.seed})
+    for section in sections:
+        recorder.append(f"observation.{section['app']}", recorded_at, dict(section))
+    return recorder.to_jsonl_bytes()
