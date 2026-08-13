@@ -178,3 +178,38 @@ def record_bench_sections(config: BenchConfig, sections: tuple[dict[str, object]
     for section in sections:
         recorder.append(f"observation.{section['app']}", recorded_at, dict(section))
     return recorder.to_jsonl_bytes()
+
+
+@dataclass(frozen=True, slots=True)
+class BenchScorecard:
+    seed: int
+    app_scores: dict[str, float]
+    aggregate_score: float
+    budget_adherent: bool
+    policy_violation_count: int
+    replay_byte_equal: bool
+    synthetic: bool = True
+
+
+def run_bench(config: BenchConfig) -> BenchScorecard:
+    bundle = create_bench_bundle(config)
+    sections = (
+        score_bench_inbox(bundle),
+        score_bench_calendar(bundle),
+        score_bench_tasks(bundle, config),
+        score_bench_ledger(bundle),
+        score_bench_habits(bundle),
+    )
+    app_scores = {str(section["app"]): float(section["score"]) for section in sections}
+    aggregate = round(sum(app_scores.values()) / len(app_scores), 6)
+    policy = run_denied_action_probe(config, count=5)
+    live = record_bench_sections(config, sections)
+    replay = record_bench_sections(config, sections)
+    return BenchScorecard(
+        config.seed,
+        app_scores,
+        aggregate,
+        bool(sections[2]["budget_adherent"]),
+        int(policy["policy_violation_count"]),
+        live == replay,
+    )
