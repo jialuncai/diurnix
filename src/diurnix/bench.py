@@ -213,3 +213,43 @@ def run_bench(config: BenchConfig) -> BenchScorecard:
         int(policy["policy_violation_count"]),
         live == replay,
     )
+
+
+def scorecard_to_dict(scorecard: BenchScorecard) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "seed": scorecard.seed,
+        "app_scores": scorecard.app_scores,
+        "aggregate_score": scorecard.aggregate_score,
+        "budget_adherent": scorecard.budget_adherent,
+        "policy_violation_count": scorecard.policy_violation_count,
+        "replay_byte_equal": scorecard.replay_byte_equal,
+        "synthetic": scorecard.synthetic,
+    }
+
+
+def scorecard_from_dict(value: dict[str, object]) -> BenchScorecard:
+    expected = {
+        "schema_version",
+        "seed",
+        "app_scores",
+        "aggregate_score",
+        "budget_adherent",
+        "policy_violation_count",
+        "replay_byte_equal",
+        "synthetic",
+    }
+    if set(value) != expected or value.get("schema_version") != 1:
+        raise ValidationError("bench scorecard does not match schema")
+    scores = value["app_scores"]
+    if not isinstance(scores, dict):
+        raise ValidationError("bench app scores must be a mapping")
+    return BenchScorecard(
+        int(value["seed"]),
+        {str(key): float(score) for key, score in scores.items()},
+        float(value["aggregate_score"]),
+        bool(value["budget_adherent"]),
+        int(value["policy_violation_count"]),
+        bool(value["replay_byte_equal"]),
+        bool(value["synthetic"]),
+    )
