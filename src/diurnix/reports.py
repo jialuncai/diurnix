@@ -48,3 +48,25 @@ def coverage_limitations(coverage: dict[str, bool]) -> tuple[str, ...]:
     if not coverage.get("torch_models", False):
         limitations.append("本次运行未执行可选的 CPU Torch 训练演示。")
     return tuple(limitations)
+
+
+def decision_timeline_svg(entries: tuple[object, ...], *, width: int = 640) -> str:
+    from html import escape
+
+    if width < 240:
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("timeline width is too small")
+    height = 50 + len(entries) * 28
+    rows = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" role="img">'
+    ]
+    rows.append('<rect width="100%" height="100%" fill="white"/>')
+    rows.append('<line x1="30" y1="20" x2="30" y2="100%" stroke="#718096"/>')
+    for index, entry in enumerate(entries):
+        kind = escape(str(getattr(entry, "kind", "unknown")))
+        y = 30 + index * 28
+        rows.append(f'<circle cx="30" cy="{y}" r="5" fill="#315f8c"/>')
+        rows.append(f'<text x="45" y="{y + 4}" font-size="12">{index}: {kind}</text>')
+    rows.append("</svg>")
+    return "".join(rows)
