@@ -70,3 +70,23 @@ def decision_timeline_svg(entries: tuple[object, ...], *, width: int = 640) -> s
         rows.append(f'<text x="45" y="{y + 4}" font-size="12">{index}: {kind}</text>')
     rows.append("</svg>")
     return "".join(rows)
+
+
+def day_ribbon_svg(day_counts: dict[str, int], *, cell_width: int = 28) -> str:
+    if cell_width < 12 or any(value < 0 for value in day_counts.values()):
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("day ribbon values are invalid")
+    ordered = sorted(day_counts.items())
+    width = max(1, len(ordered)) * cell_width
+    maximum = max((value for _, value in ordered), default=1)
+    rows = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="48" role="img">']
+    for index, (day, count) in enumerate(ordered):
+        opacity = round(0.15 + 0.85 * count / maximum, 3) if maximum else 0.15
+        rows.append(
+            f'<rect x="{index * cell_width}" y="0" width="{cell_width - 2}"'
+            f' height="24" fill="#2f855a" opacity="{opacity}">'
+            f"<title>{day}: {count}</title></rect>"
+        )
+    rows.append("</svg>")
+    return "".join(rows)
