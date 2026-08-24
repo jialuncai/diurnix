@@ -21,3 +21,17 @@ def test_markdown_report_is_deterministic() -> None:
     assert render_markdown_report(metadata, scorecard, ()) == render_markdown_report(
         metadata, scorecard, ()
     )
+
+
+def test_markdown_report_escapes_hostile_limitations() -> None:
+    metadata = build_run_metadata(3, datetime(2026, 1, 1, tzinfo=UTC), {})
+    scorecard = BenchScorecard(3, {}, 0.0, True, 0, True)
+    report = render_markdown_report(metadata, scorecard, ("<script>alert(1)</script>",))
+    assert "<script>" not in report and "&lt;script&gt;" in report
+
+
+def test_markdown_report_renders_empty_score_table() -> None:
+    metadata = build_run_metadata(3, datetime(2026, 1, 1, tzinfo=UTC), {})
+    scorecard = BenchScorecard(3, {}, 0.0, True, 0, True)
+    report = render_markdown_report(metadata, scorecard, ("限制",))
+    assert "## 应用得分" in report and "- aggregate: 0.0000" in report
