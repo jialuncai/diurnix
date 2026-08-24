@@ -129,3 +129,33 @@ def render_markdown_report(
     )
     lines.extend(f"- {escape(item)}" for item in limitations)
     return "\n".join(lines) + "\n"
+
+
+def render_html_report(
+    metadata: RunMetadata, scorecard: object, limitations: tuple[str, ...], inline_svg: str
+) -> str:
+    from html import escape
+
+    from diurnix.bench import BenchScorecard
+
+    if not isinstance(scorecard, BenchScorecard):
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("report scorecard has wrong type")
+    score_rows = "".join(
+        f"<tr><th>{escape(app)}</th><td>{score:.4f}</td></tr>"
+        for app, score in scorecard.app_scores.items()
+    )
+    limit_rows = "".join(f"<li>{escape(item)}</li>" for item in limitations)
+    return (
+        '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        "<title>diurnix 合成运行报告</title><style>body{font-family:system-ui;max-width:960px;"
+        "margin:auto;padding:24px}table{border-collapse:collapse}th,td{border:1px solid #ccc;"
+        "padding:6px;text-align:left}</style></head><body><h1>diurnix 合成运行报告</h1>"
+        f"<p>seed={metadata.seed} · version={escape(metadata.runtime_version)} · "
+        f"config={escape(metadata.config_checksum)}</p><h2>应用得分</h2><table>{score_rows}"
+        f"<tr><th>aggregate</th><td>{scorecard.aggregate_score:.4f}</td></tr></table>"
+        f"<section>{inline_svg}</section><h2>局限</h2><ul>{limit_rows}</ul>"
+        "</body></html>"
+    )
