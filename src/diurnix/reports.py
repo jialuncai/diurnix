@@ -90,3 +90,42 @@ def day_ribbon_svg(day_counts: dict[str, int], *, cell_width: int = 28) -> str:
         )
     rows.append("</svg>")
     return "".join(rows)
+
+
+def render_markdown_report(
+    metadata: RunMetadata, scorecard: object, limitations: tuple[str, ...]
+) -> str:
+    from html import escape
+
+    from diurnix.bench import BenchScorecard
+
+    if not isinstance(scorecard, BenchScorecard):
+        from diurnix.errors import ValidationError
+
+        raise ValidationError("report scorecard has wrong type")
+    lines = [
+        "# diurnix 合成运行报告",
+        "",
+        "## 运行元数据",
+        "",
+        f"- seed: {metadata.seed}",
+        f"- runtime_version: {metadata.runtime_version}",
+        f"- generated_at: {metadata.generated_at.isoformat()}",
+        f"- config_checksum: {metadata.config_checksum}",
+        "",
+        "## 应用得分",
+        "",
+    ]
+    lines.extend(f"- {escape(app)}: {score:.4f}" for app, score in scorecard.app_scores.items())
+    lines.extend(
+        (
+            f"- aggregate: {scorecard.aggregate_score:.4f}",
+            f"- policy_violations: {scorecard.policy_violation_count}",
+            f"- replay_byte_equal: {str(scorecard.replay_byte_equal).lower()}",
+            "",
+            "## 局限",
+            "",
+        )
+    )
+    lines.extend(f"- {escape(item)}" for item in limitations)
+    return "\n".join(lines) + "\n"
