@@ -159,3 +159,33 @@ def render_html_report(
         f"<section>{inline_svg}</section><h2>局限</h2><ul>{limit_rows}</ul>"
         "</body></html>"
     )
+
+
+@dataclass(frozen=True, slots=True)
+class ReportBundle:
+    markdown: str
+    html: str
+    timeline_svg: str
+    manifest: dict[str, object]
+
+
+def create_report_bundle(
+    metadata: RunMetadata,
+    scorecard: object,
+    limitations: tuple[str, ...],
+    entries: tuple[object, ...],
+) -> ReportBundle:
+    markdown = render_markdown_report(metadata, scorecard, limitations)
+    timeline = decision_timeline_svg(entries)
+    html = render_html_report(metadata, scorecard, limitations, timeline)
+    manifest = {
+        "kind": "report.bundle",
+        "schema_version": 1,
+        "seed": metadata.seed,
+        "synthetic": True,
+        "metadata": metadata_to_dict(metadata),
+        "markdown_checksum": content_checksum(markdown),
+        "html_checksum": content_checksum(html),
+        "timeline_checksum": content_checksum(timeline),
+    }
+    return ReportBundle(markdown, html, timeline, manifest)
