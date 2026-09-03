@@ -21,3 +21,19 @@ def test_html_report_embeds_scorecard_values() -> None:
     html = render_html_report(metadata, scorecard, (), "")
     assert "<th>ledger</th><td>0.7500</td>" in html
     assert "<th>aggregate</th><td>0.7500</td>" in html
+
+
+def test_html_report_escapes_limitations_and_score_names() -> None:
+    metadata = build_run_metadata(2, datetime(2026, 1, 1, tzinfo=UTC), {})
+    scorecard = BenchScorecard(2, {"<script>x</script>": 0.0}, 0.0, True, 0, True)
+    html = render_html_report(metadata, scorecard, ("<img src=x>",), "<svg></svg>")
+    assert "<script>" not in html and "&lt;script&gt;" in html
+    assert "<img" not in html and "&lt;img" in html
+
+
+def test_html_report_output_is_deterministic() -> None:
+    metadata = build_run_metadata(2, datetime(2026, 1, 1, tzinfo=UTC), {})
+    scorecard = BenchScorecard(2, {}, 0.0, True, 0, True)
+    assert render_html_report(metadata, scorecard, (), "") == render_html_report(
+        metadata, scorecard, (), ""
+    )
