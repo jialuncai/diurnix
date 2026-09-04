@@ -55,3 +55,21 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+
+def _configure_route(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--text", required=True, help="待路由的字面文本")
+    parser.add_argument("--ambiguity-band", type=float, default=0.15)
+
+
+def _cmd_route(args: argparse.Namespace) -> int:
+    from diurnix.codec import canonical_dumps
+    from diurnix.router import NumpyRouter, route_probabilities, route_to_dict
+
+    result = NumpyRouter(args.ambiguity_band).route(args.text)
+    payload = route_to_dict(result)
+    payload["probabilities"] = {
+        intent.value: probability for intent, probability in route_probabilities(result).items()
+    }
+    print(canonical_dumps(payload))
+    return 0

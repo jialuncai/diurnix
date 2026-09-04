@@ -9,8 +9,8 @@ def test_cli_exposes_every_requested_subcommand() -> None:
     assert tuple(choices) == COMMAND_NAMES
 
 
-def test_cli_subcommand_stubs_return_success_during_incremental_setup() -> None:
-    assert all(main([name]) == 0 for name in COMMAND_NAMES)
+def test_cli_command_names_are_unique() -> None:
+    assert len(COMMAND_NAMES) == len(set(COMMAND_NAMES))
 
 
 def test_cli_root_help_lists_every_command(capsys) -> None:
