@@ -73,3 +73,46 @@ def _cmd_route(args: argparse.Namespace) -> int:
     }
     print(canonical_dumps(payload))
     return 0
+
+
+def _add_seed_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--seed", type=int, default=7)
+    parser.add_argument("--start", default="2026-10-26T09:00:00+08:00")
+
+
+def _parse_start(value: str):
+    from datetime import datetime
+
+    from diurnix.errors import ValidationError
+
+    try:
+        parsed = datetime.fromisoformat(value)
+    except ValueError as error:
+        raise ValidationError("start must use ISO datetime format") from error
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        raise ValidationError("start must be timezone-aware")
+    return parsed
+
+
+def _configure_simulate(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+
+
+def _cmd_simulate(args: argparse.Namespace) -> int:
+    from diurnix.codec import canonical_dumps
+    from diurnix.factory import bundle_manifest, generate_bundle
+
+    bundle = generate_bundle(args.seed, _parse_start(args.start))
+    manifest = bundle_manifest(bundle)
+    print(
+        canonical_dumps(
+            {
+                "seed": bundle.seed,
+                "persona_id": bundle.persona.persona_id,
+                "event_count": bundle.event_count,
+                "ground_truth_checksum": manifest["ground_truth_checksum"],
+                "synthetic": True,
+            }
+        )
+    )
+    return 0
