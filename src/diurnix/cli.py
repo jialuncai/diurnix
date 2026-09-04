@@ -1,4 +1,4 @@
-"""Command-line entry point for diurnix."""
+"""Command-line entry point for deterministic offline workflows."""
 
 from __future__ import annotations
 
@@ -7,21 +7,50 @@ from collections.abc import Sequence
 
 from diurnix import __version__
 
+COMMAND_NAMES = (
+    "simulate",
+    "route",
+    "plan",
+    "act",
+    "replay",
+    "diff",
+    "triage",
+    "schedule",
+    "budget",
+    "habits",
+    "digest",
+    "bench",
+    "demo",
+)
+
+
+def _command_stub(args: argparse.Namespace) -> int:
+    del args
+    return 0
+
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the root command parser."""
+    """Build the root parser and every public subcommand."""
     parser = argparse.ArgumentParser(
         prog="diurnix",
-        description="Run deterministic offline personal-agent mechanics.",
+        description="运行确定性, 离线的个人代理机制与日常应用。",
     )
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    subparsers = parser.add_subparsers(dest="command")
+    for name in COMMAND_NAMES:
+        command = subparsers.add_parser(name, help=f"运行 {name} 工作流")
+        configure = globals().get(f"_configure_{name}")
+        if callable(configure):
+            configure(command)
+        command.set_defaults(handler=globals().get(f"_cmd_{name}", _command_stub))
     return parser
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    """Run the command line interface."""
-    build_parser().parse_args(argv)
-    return 0
+    """Parse arguments, execute one command, and return its exit status."""
+    args = build_parser().parse_args(argv)
+    handler = getattr(args, "handler", None)
+    return int(handler(args)) if callable(handler) else 0
 
 
 if __name__ == "__main__":
