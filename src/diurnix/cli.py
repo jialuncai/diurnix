@@ -116,3 +116,18 @@ def _cmd_simulate(args: argparse.Namespace) -> int:
         )
     )
     return 0
+
+
+def _configure_triage(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+
+
+def _cmd_triage(args: argparse.Namespace) -> int:
+    from diurnix.codec import canonical_dumps
+    from diurnix.factory import generate_bundle
+    from diurnix.inbox_app import triage_inbox, triage_manifest
+
+    bundle = generate_bundle(args.seed, _parse_start(args.start))
+    results = triage_inbox(bundle.inbox)
+    print(canonical_dumps(triage_manifest(bundle.inbox, results, args.seed)))
+    return 0
