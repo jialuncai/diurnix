@@ -161,3 +161,18 @@ def _cmd_budget(args: argparse.Namespace) -> int:
     findings = detect_ledger_anomalies(bundle.ledger)
     print(canonical_dumps(ledger_analysis_manifest(bundle.ledger, findings, args.seed)))
     return 0
+
+
+def _configure_habits(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+
+
+def _cmd_habits(args: argparse.Namespace) -> int:
+    from diurnix.codec import canonical_dumps
+    from diurnix.factory import generate_bundle
+    from diurnix.habits_app import habit_analysis_manifest, habit_consistency_report
+
+    bundle = generate_bundle(args.seed, _parse_start(args.start))
+    report = habit_consistency_report(bundle.habits, bundle.persona.habit_goals)
+    print(canonical_dumps(habit_analysis_manifest(bundle.habits, report, args.seed)))
+    return 0
