@@ -176,3 +176,23 @@ def _cmd_habits(args: argparse.Namespace) -> int:
     report = habit_consistency_report(bundle.habits, bundle.persona.habit_goals)
     print(canonical_dumps(habit_analysis_manifest(bundle.habits, report, args.seed)))
     return 0
+
+
+def _configure_plan(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+    parser.add_argument("--max-minutes", type=int, default=120)
+    parser.add_argument("--max-tasks", type=int, default=4)
+
+
+def _cmd_plan(args: argparse.Namespace) -> int:
+    from diurnix.bench import BenchConfig, create_bench_bundle, score_bench_tasks
+    from diurnix.codec import canonical_dumps
+
+    config = BenchConfig(
+        args.seed,
+        _parse_start(args.start),
+        max_task_minutes=args.max_minutes,
+        max_task_count=args.max_tasks,
+    )
+    print(canonical_dumps(score_bench_tasks(create_bench_bundle(config), config)))
+    return 0
