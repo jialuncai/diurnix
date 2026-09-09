@@ -146,3 +146,18 @@ def _cmd_schedule(args: argparse.Namespace) -> int:
     proposals = propose_conflict_resolutions(bundle.calendar, bundle.persona)
     print(canonical_dumps(calendar_analysis_manifest(bundle.calendar, proposals, args.seed)))
     return 0
+
+
+def _configure_budget(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+
+
+def _cmd_budget(args: argparse.Namespace) -> int:
+    from diurnix.codec import canonical_dumps
+    from diurnix.factory import generate_bundle
+    from diurnix.ledger_app import detect_ledger_anomalies, ledger_analysis_manifest
+
+    bundle = generate_bundle(args.seed, _parse_start(args.start))
+    findings = detect_ledger_anomalies(bundle.ledger)
+    print(canonical_dumps(ledger_analysis_manifest(bundle.ledger, findings, args.seed)))
+    return 0
