@@ -131,3 +131,18 @@ def _cmd_triage(args: argparse.Namespace) -> int:
     results = triage_inbox(bundle.inbox)
     print(canonical_dumps(triage_manifest(bundle.inbox, results, args.seed)))
     return 0
+
+
+def _configure_schedule(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+
+
+def _cmd_schedule(args: argparse.Namespace) -> int:
+    from diurnix.calendar_app import calendar_analysis_manifest, propose_conflict_resolutions
+    from diurnix.codec import canonical_dumps
+    from diurnix.factory import generate_bundle
+
+    bundle = generate_bundle(args.seed, _parse_start(args.start))
+    proposals = propose_conflict_resolutions(bundle.calendar, bundle.persona)
+    print(canonical_dumps(calendar_analysis_manifest(bundle.calendar, proposals, args.seed)))
+    return 0
