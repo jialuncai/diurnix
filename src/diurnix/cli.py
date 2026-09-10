@@ -196,3 +196,39 @@ def _cmd_plan(args: argparse.Namespace) -> int:
     )
     print(canonical_dumps(score_bench_tasks(create_bench_bundle(config), config)))
     return 0
+
+
+def _configure_act(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--value", default="hello")
+    parser.add_argument("--at", default="2026-10-26T09:00:00+08:00")
+
+
+def _cmd_act(args: argparse.Namespace) -> int:
+    from diurnix.codec import canonical_dumps
+    from diurnix.executor import Executor, receipt_to_dict
+    from diurnix.policy import PolicyEffect, PolicyEngine
+    from diurnix.registry import ToolRegistry
+    from diurnix.tool_calls import ToolCall
+    from diurnix.tools import ToolSpec
+
+    registry = ToolRegistry()
+    registry.register(
+        ToolSpec(
+            "loopback.echo",
+            "Return the supplied offline value.",
+            {
+                "type": "object",
+                "properties": {"value": {"type": "string"}},
+                "required": ["value"],
+                "additionalProperties": False,
+            },
+            ("loopback.read",),
+        ),
+        lambda arguments: {"echo": arguments["value"]},
+    )
+    executor = Executor(registry, PolicyEngine((), default_effect=PolicyEffect.ALLOW))
+    receipt = executor.execute(
+        ToolCall("cli_act", "loopback.echo", {"value": args.value}), _parse_start(args.at)
+    )
+    print(canonical_dumps(receipt_to_dict(receipt)))
+    return 0
