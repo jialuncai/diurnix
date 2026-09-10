@@ -232,3 +232,23 @@ def _cmd_act(args: argparse.Namespace) -> int:
     )
     print(canonical_dumps(receipt_to_dict(receipt)))
     return 0
+
+
+def _configure_replay(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--path", required=True)
+    parser.add_argument("--seed", type=int, default=0)
+
+
+def _cmd_replay(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from diurnix.codec import canonical_dumps
+    from diurnix.session import SessionReplayer, recorder_from_jsonl_bytes, session_manifest
+
+    content = Path(args.path).read_bytes()
+    recorder = recorder_from_jsonl_bytes(content)
+    replayed = SessionReplayer(recorder.entries).replay_bytes()
+    payload = session_manifest(recorder.entries, args.seed)
+    payload["byte_equal"] = replayed == content
+    print(canonical_dumps(payload))
+    return 0
