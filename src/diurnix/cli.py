@@ -252,3 +252,25 @@ def _cmd_replay(args: argparse.Namespace) -> int:
     payload["byte_equal"] = replayed == content
     print(canonical_dumps(payload))
     return 0
+
+
+def _configure_diff(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("--left", required=True)
+    parser.add_argument("--right", required=True)
+
+
+def _cmd_diff(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from diurnix.codec import canonical_dumps
+    from diurnix.session import diff_sessions, difference_to_dict, recorder_from_jsonl_bytes
+
+    left = recorder_from_jsonl_bytes(Path(args.left).read_bytes()).entries
+    right = recorder_from_jsonl_bytes(Path(args.right).read_bytes()).entries
+    differences = [difference_to_dict(item) for item in diff_sessions(left, right)]
+    print(
+        canonical_dumps(
+            {"schema_version": 1, "difference_count": len(differences), "differences": differences}
+        )
+    )
+    return 1 if differences else 0
