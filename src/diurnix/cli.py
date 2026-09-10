@@ -274,3 +274,32 @@ def _cmd_diff(args: argparse.Namespace) -> int:
         )
     )
     return 1 if differences else 0
+
+
+def _configure_digest(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+    parser.add_argument("--format", choices=("markdown", "html"), default="markdown")
+
+
+def _cmd_digest(args: argparse.Namespace) -> int:
+    from diurnix.bench import BenchConfig, run_bench
+    from diurnix.reports import (
+        build_run_metadata,
+        coverage_limitations,
+        create_report_bundle,
+    )
+
+    start = _parse_start(args.start)
+    config = BenchConfig(args.seed, start)
+    metadata = build_run_metadata(args.seed, start, {"seed": args.seed, "offline": True})
+    limitations = coverage_limitations(
+        {
+            "synthetic_data": True,
+            "real_llm": False,
+            "external_services": False,
+            "torch_models": False,
+        }
+    )
+    bundle = create_report_bundle(metadata, run_bench(config), limitations, ())
+    print(bundle.html if args.format == "html" else bundle.markdown, end="")
+    return 0
