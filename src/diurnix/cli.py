@@ -303,3 +303,16 @@ def _cmd_digest(args: argparse.Namespace) -> int:
     bundle = create_report_bundle(metadata, run_bench(config), limitations, ())
     print(bundle.html if args.format == "html" else bundle.markdown, end="")
     return 0
+
+
+def _configure_bench(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+
+
+def _cmd_bench(args: argparse.Namespace) -> int:
+    from diurnix.bench import BenchConfig, run_bench, scorecard_to_dict
+    from diurnix.codec import canonical_dumps
+
+    scorecard = run_bench(BenchConfig(args.seed, _parse_start(args.start)))
+    print(canonical_dumps(scorecard_to_dict(scorecard)))
+    return 0
