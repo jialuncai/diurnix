@@ -50,7 +50,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Parse arguments, execute one command, and return its exit status."""
     args = build_parser().parse_args(argv)
     handler = getattr(args, "handler", None)
-    return int(handler(args)) if callable(handler) else 0
+    from diurnix.errors import DiurnixError
+
+    if not callable(handler):
+        return 0
+    try:
+        return int(handler(args))
+    except (OSError, DiurnixError) as error:
+        import sys
+
+        print(f"diurnix: {error}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
