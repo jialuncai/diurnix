@@ -316,3 +316,58 @@ def _cmd_bench(args: argparse.Namespace) -> int:
     scorecard = run_bench(BenchConfig(args.seed, _parse_start(args.start)))
     print(canonical_dumps(scorecard_to_dict(scorecard)))
     return 0
+
+
+def _configure_demo(parser: argparse.ArgumentParser) -> None:
+    _add_seed_arguments(parser)
+
+
+def _cmd_demo(args: argparse.Namespace) -> int:
+    from diurnix.approvals import (
+        ApprovalQueue,
+        ApproverMode,
+        ScriptedApprover,
+        apply_scripted_approver,
+        approval_metrics,
+    )
+    from diurnix.bench import BenchConfig, run_bench, scorecard_to_dict
+    from diurnix.codec import canonical_dumps
+    from diurnix.executor import Executor, execute_approved
+    from diurnix.policy import PolicyEffect, PolicyEngine
+    from diurnix.registry import ToolRegistry
+    from diurnix.tool_calls import ToolCall
+    from diurnix.tools import SideEffect, ToolSpec
+
+    start = _parse_start(args.start)
+    scorecard = run_bench(BenchConfig(args.seed, start))
+    registry = ToolRegistry()
+    registry.register(
+        ToolSpec(
+            "calendar.write",
+            "Write to the synthetic calendar.",
+            {"type": "object", "properties": {}, "additionalProperties": False},
+            ("calendar.write",),
+            SideEffect.LOCAL,
+        ),
+        lambda arguments: {"scheduled": True, "arguments": arguments},
+    )
+    executor = Executor(registry, PolicyEngine((), default_effect=PolicyEffect.ASK))
+    queue = ApprovalQueue()
+    pending = queue.submit(ToolCall("demo_schedule", "calendar.write", {}), start)
+    approved = apply_scripted_approver(
+        queue, pending.approval_id, ScriptedApprover("demo-persona", ApproverMode.AUTO_ALLOW, 1)
+    )
+    receipt = execute_approved(executor, approved, start)
+    print(
+        canonical_dumps(
+            {
+                "schema_version": 1,
+                "seed": args.seed,
+                "synthetic": True,
+                "scorecard": scorecard_to_dict(scorecard),
+                "approval_metrics": approval_metrics(queue),
+                "approved_action_status": receipt.status.value,
+            }
+        )
+    )
+    return 0
