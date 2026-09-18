@@ -3,6 +3,7 @@
 from diurnix._version import __version__
 from diurnix.approvals import ApprovalQueue, ApprovalStatus, PendingApproval
 from diurnix.artifacts import ArtifactEnvelope
+from diurnix.bench import BenchConfig, BenchScorecard
 from diurnix.budgets import Budget, Usage
 from diurnix.calendar_app import IntervalRelation, RescheduleProposal
 from diurnix.clock import SyntheticClock
@@ -29,6 +30,7 @@ from diurnix.policy import PolicyAction, PolicyDecision, PolicyEffect, PolicyEng
 from diurnix.policy_log import DecisionLog
 from diurnix.randomness import SeededRandom
 from diurnix.registry import ToolRegistry
+from diurnix.reports import ReportBundle, RunMetadata
 from diurnix.router import Intent, NumpyRouter, RouteResult
 from diurnix.session import SessionEntry, SessionFileRecorder, SessionRecorder, SessionReplayer
 from diurnix.tasks_app import DailyTaskPlan, TaskItem, TaskStatus
@@ -41,6 +43,8 @@ __all__ = [
     "ApprovalQueue",
     "ApprovalStatus",
     "ArtifactEnvelope",
+    "BenchConfig",
+    "BenchScorecard",
     "Budget",
     "BudgetEnvelope",
     "CalendarEntry",
@@ -76,10 +80,12 @@ __all__ = [
     "PolicyEngine",
     "PolicyRule",
     "PrivacyTier",
+    "ReportBundle",
     "RescheduleProposal",
     "RetryConfig",
     "RouteResult",
     "RoutineSchedule",
+    "RunMetadata",
     "SeededRandom",
     "SessionEntry",
     "SessionFileRecorder",
