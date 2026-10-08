@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+      - name: Create environment
+        run: uv venv --python "${{ matrix.python-version }}" .venv
+      - name: Install locked dev and CPU Torch extras
+        run: >-
+          uv sync --locked --extra dev --extra torch --python .venv/bin/python
+          --index-strategy unsafe-best-match
+      - name: Build
+        run: make build
+      - name: Test all
+        run: make test-all
+      - name: Format check
+        run: make format-check
+      - name: Lint
+        run: make lint
+      - name: Typecheck
+        run: make typecheck
