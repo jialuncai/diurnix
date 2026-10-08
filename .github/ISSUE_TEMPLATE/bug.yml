@@ -1,0 +1,37 @@
+name: Bug report
+description: Report a reproducible diurnix behavior defect
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include real personal data, credentials, or private session logs.
+  - type: input
+    id: version
+    attributes:
+      label: diurnix version
+      placeholder: Output of `diurnix --version`
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal offline reproduction
+      description: Include seed, timezone-aware start, command or code, and synthetic fixture details.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: The reproduction uses no real personal data or secret.
+          required: true
+        - label: I searched existing issues for the same behavior.
+          required: true

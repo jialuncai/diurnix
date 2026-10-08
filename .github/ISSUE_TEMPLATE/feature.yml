@@ -1,0 +1,26 @@
+name: Feature request
+description: Propose a deterministic runtime or daily-application improvement
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Mechanism or application problem
+      description: Explain the offline behavior and user-facing boundary.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Proposed contract
+      description: Include schema, policy, determinism, and backward-compatibility effects.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Synthetic validation plan
+      description: State planted truth, boundary cases, and measurements without claiming real-world quality.
+    validations:
+      required: true
