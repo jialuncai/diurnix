@@ -14,3 +14,20 @@ def test_route_mapping_roundtrips() -> None:
 
     result = NumpyRouter().route("task 任务")
     assert route_from_dict(route_to_dict(result)) == result
+
+
+def test_route_decoder_rejects_wrong_container_and_flag_types() -> None:
+    import pytest
+
+    from diurnix.router import route_from_dict
+
+    base = {
+        "schema_version": 1,
+        "intent": "inbox",
+        "scores": {},
+        "ambiguous": False,
+    }
+    with pytest.raises(ValueError, match="payload types"):
+        route_from_dict({**base, "scores": []})
+    with pytest.raises(ValueError, match="flag"):
+        route_from_dict({**base, "ambiguous": 1})

@@ -170,10 +170,17 @@ def route_from_dict(value: dict[str, object]) -> RouteResult:
         or value.get("schema_version") != 1
     ):
         raise ValueError("route does not match schema")
-    scores = {Intent(key): float(score) for key, score in value["scores"].items()}  # type: ignore[union-attr]
+    raw_scores = value["scores"]
+    intent = value["intent"]
+    ambiguous = value["ambiguous"]
+    if not isinstance(raw_scores, dict) or not isinstance(intent, str):
+        raise ValueError("route payload types are invalid")
+    if not isinstance(ambiguous, bool):
+        raise ValueError("route ambiguity flag must be boolean")
+    scores = {Intent(str(key)): float(score) for key, score in raw_scores.items()}
     if set(scores) != set(Intent):
         raise ValueError("route scores are incomplete")
-    return RouteResult(Intent(value["intent"]), scores, bool(value["ambiguous"]))  # type: ignore[arg-type]
+    return RouteResult(Intent(intent), scores, ambiguous)
 
 
 def router_manifest(report: dict[str, object], seed: int) -> dict[str, object]:

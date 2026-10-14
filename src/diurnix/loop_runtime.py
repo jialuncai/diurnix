@@ -85,6 +85,8 @@ def loop_from_checkpoint(value: dict[str, object]) -> BudgetedLoop:
         s = value["state"]
         b = value["budget"]
         u = value["usage"]
+        if not isinstance(s, dict) or not isinstance(b, dict) or not isinstance(u, dict):
+            raise TypeError("checkpoint sections must be mappings")
         state = LoopState(
             LoopPhase(s["phase"]),
             s["step_count"],

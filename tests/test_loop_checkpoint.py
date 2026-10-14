@@ -22,3 +22,13 @@ def test_loop_checkpoint_roundtrips_runtime_values() -> None:
         Usage(2, 1, 1),
     )
     assert loop_from_checkpoint(loop_checkpoint(loop)) == loop
+
+
+def test_loop_checkpoint_rejects_non_mapping_sections() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+    from diurnix.loop_runtime import loop_from_checkpoint
+
+    with pytest.raises(ValidationError, match="invalid loop checkpoint"):
+        loop_from_checkpoint({"schema_version": 1, "state": [], "budget": {}, "usage": {}})
