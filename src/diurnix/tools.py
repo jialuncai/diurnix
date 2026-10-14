@@ -67,7 +67,9 @@ def validate_arguments(spec: ToolSpec, arguments: dict[str, Any]) -> dict[str, A
 
 def _validate_value(value: Any, schema: dict[str, Any], *, path: str) -> None:
     expected = schema.get("type")
-    types = {
+    if not isinstance(expected, str):
+        raise ValidationError(f"unsupported schema type: {expected}", path=path)
+    types: dict[str, type[Any] | tuple[type[Any], ...]] = {
         "string": str,
         "integer": int,
         "number": (int, float),

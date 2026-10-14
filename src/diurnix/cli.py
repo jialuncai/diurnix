@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Sequence
+from datetime import datetime
 
 from diurnix import __version__
 
@@ -90,9 +91,7 @@ def _add_seed_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--start", default="2026-10-26T09:00:00+08:00")
 
 
-def _parse_start(value: str):
-    from datetime import datetime
-
+def _parse_start(value: str) -> datetime:
     from diurnix.errors import ValidationError
 
     try:

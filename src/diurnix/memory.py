@@ -191,8 +191,8 @@ def retention_score(note: MemoryNote, now: datetime, policy: RetentionPolicy) ->
 def partition_retained_memory(
     notes: tuple[MemoryNote, ...], now: datetime, policy: RetentionPolicy
 ) -> tuple[tuple[MemoryNote, ...], tuple[MemoryNote, ...]]:
-    retained = []
-    forgotten = []
+    retained: list[MemoryNote] = []
+    forgotten: list[MemoryNote] = []
     for note in sorted(notes, key=lambda item: (item.created_at, item.note_id)):
         target = (
             retained if retention_score(note, now, policy) >= policy.minimum_score else forgotten

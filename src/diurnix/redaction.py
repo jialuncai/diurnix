@@ -21,14 +21,14 @@ class PiiMatch:
 
 def find_pii(text: str) -> tuple[PiiMatch, ...]:
     """Find non-overlapping email, phone, and card candidates in position order."""
-    matches = []
+    matches: list[PiiMatch] = []
     for kind, pattern in (("email", _EMAIL), ("phone", _PHONE), ("card", _CARD)):
         matches.extend(
             PiiMatch(kind, match.start(), match.end(), match.group())
             for match in pattern.finditer(text)
         )
     ordered = sorted(matches, key=lambda item: (item.start, -(item.end - item.start), item.kind))
-    result = []
+    result: list[PiiMatch] = []
     for item in ordered:
         if not result or item.start >= result[-1].end:
             result.append(item)

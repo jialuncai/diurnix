@@ -210,7 +210,10 @@ def approval_metrics(queue: ApprovalQueue) -> dict[str, float | int]:
     """Calculate simulated latency and outcome rates over resolved history."""
     history = queue.history()
     resolved = [item for item in history if item.decided_at is not None]
-    latencies = [(item.decided_at - item.created_at).total_seconds() for item in resolved]
+    latencies: list[float] = []
+    for item in resolved:
+        if item.decided_at is not None:
+            latencies.append((item.decided_at - item.created_at).total_seconds())
     return {
         "request_count": len(history),
         "resolved_count": len(resolved),

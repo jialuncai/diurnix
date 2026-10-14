@@ -94,12 +94,12 @@ def migrate_legacy_event(value: dict[str, Any]) -> dict[str, Any]:
     """Upgrade the documented schema-zero mapping into schema one."""
     if value.get("schema_version") != 0:
         raise ValidationError("legacy event must have schema version zero")
-    migrated = {
+    migrated: dict[str, Any] = {
         "kind": value.get("type"),
         "schema_version": 1,
         "payload": dict(value.get("data", {})),
     }
-    payload = migrated["payload"]
+    payload: dict[str, Any] = migrated["payload"]
     if migrated["kind"] == EventKind.INBOX_MESSAGE.value:
         payload.setdefault("priority", 0)
     return migrated

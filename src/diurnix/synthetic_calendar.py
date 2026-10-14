@@ -33,7 +33,7 @@ def generate_calendar_entry(
 
 def generate_calendar_week(persona: Persona, seed: int, start: date) -> tuple[CalendarEntry, ...]:
     """Generate morning and afternoon appointments on configured workdays."""
-    result = []
+    result: list[CalendarEntry] = []
     for offset in range(7):
         day = start + timedelta(days=offset)
         if day.weekday() not in persona.work_hours.weekdays:
