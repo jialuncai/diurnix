@@ -14,7 +14,8 @@ class TorchAnomalyClassifier(torch.nn.Module):
         self.linear = torch.nn.Linear(3, 1)
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
-        return self.linear(features).squeeze(-1)
+        output: torch.Tensor = self.linear(features).squeeze(-1)
+        return output
 
 
 @dataclass(frozen=True, slots=True)

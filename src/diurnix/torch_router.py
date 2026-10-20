@@ -17,7 +17,8 @@ class TorchRouter(torch.nn.Module):
         self.ambiguity_band = ambiguity_band
 
     def forward(self, features: torch.Tensor) -> torch.Tensor:
-        return self.linear(features)
+        output: torch.Tensor = self.linear(features)
+        return output
 
     def route(self, text: str) -> RouteResult:
         features = torch.tensor(extract_features(text).values, dtype=torch.float32)
@@ -66,7 +67,10 @@ def export_router_weights(model: TorchRouter) -> dict[str, object]:
 def restore_router_weights(value: dict[str, object]) -> TorchRouter:
     if value.get("schema_version") != 1 or value.get("synthetic_only") is not True:
         raise ValueError("unsupported Torch router checkpoint")
-    model = TorchRouter(ambiguity_band=float(value["ambiguity_band"]))
+    ambiguity_band = value["ambiguity_band"]
+    if not isinstance(ambiguity_band, (int, float)) or isinstance(ambiguity_band, bool):
+        raise ValueError("Torch router ambiguity band must be numeric")
+    model = TorchRouter(ambiguity_band=float(ambiguity_band))
     weight = torch.tensor(value["weight"], dtype=torch.float32)
     bias = torch.tensor(value["bias"], dtype=torch.float32)
     if weight.shape != model.linear.weight.shape or bias.shape != model.linear.bias.shape:

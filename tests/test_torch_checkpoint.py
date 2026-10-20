@@ -21,3 +21,16 @@ def test_torch_router_checkpoint_rejects_wrong_shape() -> None:
     value["weight"] = [[1.0]]
     with pytest.raises(ValueError, match="shape"):
         restore_router_weights(value)
+
+
+def test_torch_router_checkpoint_rejects_coerced_ambiguity_band() -> None:
+    with pytest.raises(ValueError, match="numeric"):
+        restore_router_weights(
+            {
+                "schema_version": 1,
+                "synthetic_only": True,
+                "ambiguity_band": "0.1",
+                "weight": [],
+                "bias": [],
+            }
+        )
