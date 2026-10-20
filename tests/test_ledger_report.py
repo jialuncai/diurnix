@@ -21,3 +21,19 @@ def test_ledger_manifest_labels_empty_synthetic_analysis() -> None:
     assert manifest["synthetic"] is True
     assert manifest["summary"]["transaction_count"] == 0
     assert str(manifest["svg_checksum"]).startswith("sha256:")
+
+
+def test_ledger_digest_rejects_wrong_summary_shapes() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    with pytest.raises(ValidationError, match="invalid types"):
+        monthly_ledger_digest(
+            {
+                "transaction_count": 0,
+                "total_spending": "0",
+                "anomaly_count": 0,
+                "category_spending": {},
+            }
+        )

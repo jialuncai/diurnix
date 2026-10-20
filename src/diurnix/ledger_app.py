@@ -88,13 +88,25 @@ def envelope_from_dict(value: dict[str, object]) -> BudgetEnvelope:
     expected = {"schema_version", "category", "allocation", "spent", "rollover", "available"}
     if set(value) != expected or value.get("schema_version") != 1:
         raise ValidationError("budget envelope does not match schema")
+    allocation = value["allocation"]
+    spent = value["spent"]
+    rollover = value["rollover"]
+    available = value["available"]
+    if (
+        not isinstance(allocation, (int, float))
+        or isinstance(allocation, bool)
+        or not isinstance(spent, (int, float))
+        or isinstance(spent, bool)
+        or not isinstance(rollover, (int, float))
+        or isinstance(rollover, bool)
+        or not isinstance(available, (int, float))
+        or isinstance(available, bool)
+    ):
+        raise ValidationError("budget envelope values must be numeric")
     envelope = BudgetEnvelope(
-        str(value["category"]),
-        float(value["allocation"]),
-        float(value["spent"]),
-        float(value["rollover"]),
+        str(value["category"]), float(allocation), float(spent), float(rollover)
     )
-    if float(value["available"]) != envelope.available:
+    if float(available) != envelope.available:
         raise ValidationError("budget envelope available value is inconsistent")
     return envelope
 
@@ -339,17 +351,23 @@ def ledger_svg(summary: dict[str, object], *, width: int = 480, bar_height: int 
 
 
 def monthly_ledger_digest(summary: dict[str, object]) -> str:
+    total_spending = summary["total_spending"]
+    spending = summary["category_spending"]
+    if not isinstance(total_spending, (int, float)) or not isinstance(spending, dict):
+        raise ValidationError("ledger summary fields have invalid types")
     lines = [
         "# 家庭账本月报",
         "",
         f"交易数: {summary['transaction_count']}",
-        f"支出合计: {float(summary['total_spending']):.2f}",
+        f"支出合计: {float(total_spending):.2f}",
         f"异常数: {summary['anomaly_count']}",
         "",
         "## 分类支出",
     ]
-    spending = summary["category_spending"]
-    lines.extend(f"- {category}: {float(value):.2f}" for category, value in spending.items())
+    for category, amount in spending.items():
+        if not isinstance(amount, (int, float)):
+            raise ValidationError("ledger category spending must be numeric")
+        lines.append(f"- {category}: {float(amount):.2f}")
     if not spending:
         lines.append("- 无")
     return "\n".join(lines) + "\n"

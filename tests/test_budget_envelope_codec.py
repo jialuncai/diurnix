@@ -16,3 +16,11 @@ def test_budget_envelope_codec_rejects_derived_value_drift() -> None:
     encoded["available"] = 999
     with pytest.raises(ValidationError, match="inconsistent"):
         envelope_from_dict(encoded)
+
+
+def test_budget_envelope_codec_rejects_coerced_numbers() -> None:
+    encoded = envelope_to_dict(BudgetEnvelope("food", 100, 20))
+    with pytest.raises(ValidationError, match="numeric"):
+        envelope_from_dict({**encoded, "allocation": "100"})
+    with pytest.raises(ValidationError, match="numeric"):
+        envelope_from_dict({**encoded, "spent": True})
