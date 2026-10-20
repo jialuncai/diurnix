@@ -52,3 +52,13 @@ def test_daily_plan_codec_rejects_non_array_slots() -> None:
     encoded["slots"] = {}
     with pytest.raises(ValidationError, match="arrays"):
         daily_plan_from_dict(encoded)
+
+
+def test_daily_plan_codec_rejects_coerced_effort() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = daily_plan_to_dict(_plan())
+    with pytest.raises(ValidationError, match="effort"):
+        daily_plan_from_dict({**encoded, "effort_minutes": "30"})

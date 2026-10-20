@@ -89,6 +89,15 @@ def task_from_dict(value: dict[str, object]) -> TaskItem:
     }
     if set(value) != expected or value.get("schema_version") != 1:
         raise ValidationError("task does not match schema")
+    importance = value["importance"]
+    effort_minutes = value["effort_minutes"]
+    if (
+        not isinstance(importance, int)
+        or isinstance(importance, bool)
+        or not isinstance(effort_minutes, int)
+        or isinstance(effort_minutes, bool)
+    ):
+        raise ValidationError("task numeric fields must be integers")
     try:
         deadline = (
             None if value["deadline"] is None else datetime.fromisoformat(str(value["deadline"]))
@@ -98,8 +107,8 @@ def task_from_dict(value: dict[str, object]) -> TaskItem:
             str(value["title"]),
             datetime.fromisoformat(str(value["captured_at"])),
             deadline=deadline,
-            importance=int(value["importance"]),
-            effort_minutes=int(value["effort_minutes"]),
+            importance=importance,
+            effort_minutes=effort_minutes,
             status=TaskStatus(str(value["status"])),
             context=str(value["context"]),
         )
@@ -244,8 +253,8 @@ def build_daily_task_plan(
         for entry in calendar
         if entry.starts_at.astimezone(work_start.tzinfo).date() == day
     )
-    slots = []
-    unscheduled = []
+    slots: list[DailyTaskSlot] = []
+    unscheduled: list[str] = []
     used_effort = 0
     for task in ranked:
         if len(slots) >= max_tasks or used_effort + task.effort_minutes > max_effort_minutes:
@@ -296,6 +305,9 @@ def daily_plan_from_dict(value: dict[str, object]) -> DailyTaskPlan:
     unscheduled = value["unscheduled_task_ids"]
     if not isinstance(slots_value, list) or not isinstance(unscheduled, list):
         raise ValidationError("daily task plan arrays are invalid")
+    effort_minutes = value["effort_minutes"]
+    if not isinstance(effort_minutes, int) or isinstance(effort_minutes, bool):
+        raise ValidationError("daily task plan effort must be an integer")
     try:
         slots = tuple(
             DailyTaskSlot(
@@ -310,7 +322,7 @@ def daily_plan_from_dict(value: dict[str, object]) -> DailyTaskPlan:
             date.fromisoformat(str(value["day"])),
             slots,
             tuple(str(item) for item in unscheduled),
-            int(value["effort_minutes"]),
+            effort_minutes,
         )
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationError("invalid daily task plan value") from error
@@ -389,13 +401,16 @@ def weekly_task_review(
 
 def weekly_review_digest(review: dict[str, object]) -> str:
     slipped = review["slipped_task_ids"]
+    completion_rate = review["completion_rate"]
+    if not isinstance(slipped, list) or not isinstance(completion_rate, (int, float)):
+        raise ValidationError("weekly review fields have invalid types")
     lines = [
         "# 每周任务回顾",
         "",
         f"任务总数: {review['task_count']}",
         f"已完成: {review['completed_count']}",
         f"待行动: {review['actionable_count']}",
-        f"完成率: {float(review['completion_rate']):.2%}",
+        f"完成率: {float(completion_rate):.2%}",
         "",
         "## 延误任务",
     ]

@@ -58,3 +58,15 @@ def test_task_codec_rejects_unknown_status() -> None:
     encoded["status"] = "lost"
     with pytest.raises(ValidationError, match="invalid task"):
         task_from_dict(encoded)
+
+
+def test_task_codec_rejects_coerced_numeric_fields() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = task_to_dict(_task())
+    with pytest.raises(ValidationError, match="integers"):
+        task_from_dict({**encoded, "importance": "4"})
+    with pytest.raises(ValidationError, match="integers"):
+        task_from_dict({**encoded, "effort_minutes": True})
