@@ -83,7 +83,10 @@ def score_bench_habits(bundle: SyntheticBundle) -> dict[str, object]:
     spans = detect_lapse_spans(bundle.habits)
     metrics = lapse_recovery_metrics(bundle.habits, spans)
     report = habit_consistency_report(bundle.habits, bundle.persona.habit_goals)
-    consistency = [float(item["consistency"]) for item in report["habits"]]
+    habit_rows = report["habits"]
+    if not isinstance(habit_rows, list):
+        raise ValidationError("habit benchmark rows must be a list")
+    consistency = [float(item["consistency"]) for item in habit_rows if isinstance(item, dict)]
     return {
         "app": "habits",
         "sample_count": len(bundle.habits),
@@ -200,17 +203,26 @@ def run_bench(config: BenchConfig) -> BenchScorecard:
         score_bench_ledger(bundle),
         score_bench_habits(bundle),
     )
-    app_scores = {str(section["app"]): float(section["score"]) for section in sections}
+    app_scores: dict[str, float] = {}
+    for section in sections:
+        score = section["score"]
+        if not isinstance(score, (int, float)):
+            raise ValidationError("bench app score must be numeric")
+        app_scores[str(section["app"])] = float(score)
     aggregate = round(sum(app_scores.values()) / len(app_scores), 6)
     policy = run_denied_action_probe(config, count=5)
     live = record_bench_sections(config, sections)
     replay = record_bench_sections(config, sections)
+    budget_adherent = sections[2]["budget_adherent"]
+    violation_count = policy["policy_violation_count"]
+    if not isinstance(budget_adherent, bool) or not isinstance(violation_count, int):
+        raise ValidationError("bench invariant fields have invalid types")
     return BenchScorecard(
         config.seed,
         app_scores,
         aggregate,
-        bool(sections[2]["budget_adherent"]),
-        int(policy["policy_violation_count"]),
+        budget_adherent,
+        violation_count,
         live == replay,
     )
 
@@ -242,14 +254,32 @@ def scorecard_from_dict(value: dict[str, object]) -> BenchScorecard:
     if set(value) != expected or value.get("schema_version") != 1:
         raise ValidationError("bench scorecard does not match schema")
     scores = value["app_scores"]
+    seed = value["seed"]
+    aggregate = value["aggregate_score"]
+    violation_count = value["policy_violation_count"]
+    budget_adherent = value["budget_adherent"]
+    replay_byte_equal = value["replay_byte_equal"]
+    synthetic = value["synthetic"]
     if not isinstance(scores, dict):
         raise ValidationError("bench app scores must be a mapping")
+    if not isinstance(seed, int) or isinstance(seed, bool):
+        raise ValidationError("bench seed must be an integer")
+    if not isinstance(aggregate, (int, float)) or isinstance(aggregate, bool):
+        raise ValidationError("bench aggregate score must be numeric")
+    if not isinstance(violation_count, int) or isinstance(violation_count, bool):
+        raise ValidationError("bench violation count must be an integer")
+    if (
+        not isinstance(budget_adherent, bool)
+        or not isinstance(replay_byte_equal, bool)
+        or not isinstance(synthetic, bool)
+    ):
+        raise ValidationError("bench flags must be boolean")
     return BenchScorecard(
-        int(value["seed"]),
+        seed,
         {str(key): float(score) for key, score in scores.items()},
-        float(value["aggregate_score"]),
-        bool(value["budget_adherent"]),
-        int(value["policy_violation_count"]),
-        bool(value["replay_byte_equal"]),
-        bool(value["synthetic"]),
+        float(aggregate),
+        budget_adherent,
+        violation_count,
+        replay_byte_equal,
+        synthetic,
     )

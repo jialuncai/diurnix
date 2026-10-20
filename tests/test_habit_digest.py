@@ -18,3 +18,12 @@ def test_habit_digest_renders_measured_values() -> None:
 def test_empty_habit_digest_is_explicit() -> None:
     digest = habit_consistency_digest({"habit_count": 0, "habits": []}, {"recall": 1.0})
     assert "习惯数: 0" in digest and "## 各习惯\n- 无" in digest
+
+
+def test_habit_digest_rejects_wrong_collection_shapes() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    with pytest.raises(ValidationError, match="invalid types"):
+        habit_consistency_digest({"habit_count": 0, "habits": {}}, {"recall": 1.0})

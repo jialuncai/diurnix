@@ -19,3 +19,15 @@ def test_bench_scorecard_codec_rejects_extensions() -> None:
     encoded["extra"] = True
     with pytest.raises(ValidationError, match="schema"):
         scorecard_from_dict(encoded)
+
+
+def test_bench_scorecard_decoder_rejects_numeric_and_flag_coercion() -> None:
+    import pytest
+
+    from diurnix.errors import ValidationError
+
+    encoded = scorecard_to_dict(_scorecard())
+    with pytest.raises(ValidationError, match="seed"):
+        scorecard_from_dict({**encoded, "seed": "7"})
+    with pytest.raises(ValidationError, match="flags"):
+        scorecard_from_dict({**encoded, "replay_byte_equal": 1})

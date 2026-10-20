@@ -114,7 +114,7 @@ def detect_lapse_spans(
                     == 1
                 )
             )
-            if consecutive:
+            if consecutive and event is not None:
                 run.append(event)
                 continue
             if len(run) >= minimum_days:
@@ -311,20 +311,26 @@ def habit_consistency_report(
 
 
 def habit_consistency_digest(report: dict[str, object], lapse_metrics: dict[str, object]) -> str:
+    recall = lapse_metrics["recall"]
+    habits = report["habits"]
+    if not isinstance(recall, (int, float)) or not isinstance(habits, list):
+        raise ValidationError("habit report fields have invalid types")
     lines = [
         "# 习惯一致性报告",
         "",
         f"习惯数: {report['habit_count']}",
-        f"种植断档召回率: {float(lapse_metrics['recall']):.2%}",
+        f"种植断档召回率: {float(recall):.2%}",
         "",
         "## 各习惯",
     ]
-    for row in report["habits"]:
+    for row in habits:
+        if not isinstance(row, dict):
+            raise ValidationError("habit report rows must be mappings")
         lines.append(
             f"- {row['habit']}: 一致性 {float(row['consistency']):.2%}, "
             f"当前连续 {row['current_streak']} 天"
         )
-    if not report["habits"]:
+    if not habits:
         lines.append("- 无")
     return "\n".join(lines) + "\n"
 
