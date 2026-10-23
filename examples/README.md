@@ -7,8 +7,10 @@
 - [30 天习惯连续记录](habit_streak/README.md)：planted lapse → heatmap → consistency report
 - [合成角色完整一周](persona_week/README.md)：四应用 → bench → HTML report bundle
 
-最小安装检查仍可运行：
+一次验证全部示例及其精确产物集合：
 
 ```bash
-.venv/bin/python examples/quickstart.py
+make examples-check
 ```
+
+最小安装检查仍可运行 `.venv/bin/python examples/quickstart.py`。

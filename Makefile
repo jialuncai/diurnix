@@ -1,4 +1,4 @@
-.PHONY: build test format-check format lint test-all typecheck release
+.PHONY: build test format-check format lint test-all typecheck examples-check release
 
 build:
 	.venv/bin/python -m build --wheel --no-isolation
@@ -23,4 +23,7 @@ test-all:
 typecheck:
 	.venv/bin/mypy src scripts
 
-release: build test-all format-check lint typecheck
+examples-check:
+	.venv/bin/python scripts/check_examples.py
+
+release: build test-all format-check lint typecheck examples-check
