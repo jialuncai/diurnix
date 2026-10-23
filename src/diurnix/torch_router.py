@@ -57,8 +57,10 @@ def train_synthetic_router(
 def export_router_weights(model: TorchRouter) -> dict[str, object]:
     return {
         "schema_version": 1,
-        "weight": [[round(float(value), 8) for value in row] for row in model.linear.weight],
-        "bias": [round(float(value), 8) for value in model.linear.bias],
+        "weight": [
+            [round(float(value), 8) for value in row] for row in model.linear.weight.detach()
+        ],
+        "bias": [round(float(value), 8) for value in model.linear.bias.detach()],
         "ambiguity_band": model.ambiguity_band,
         "synthetic_only": True,
     }

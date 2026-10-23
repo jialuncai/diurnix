@@ -10,9 +10,13 @@ export_router_weights = torch_router_module.export_router_weights
 restore_router_weights = torch_router_module.restore_router_weights
 
 
-def test_torch_router_weights_roundtrip_predictions() -> None:
+def test_torch_router_weights_roundtrip_predictions_without_autograd_warning() -> None:
+    import warnings
+
     router = TorchRouter(seed=23)
-    restored = restore_router_weights(export_router_weights(router))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        restored = restore_router_weights(export_router_weights(router))
     assert restored.route("budget 账单") == router.route("budget 账单")
 
 
