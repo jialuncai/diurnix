@@ -28,7 +28,7 @@ jobs:
       - name: Smoke-check wheel installation
         run: .venv/bin/python scripts/check_package.py
       - name: Publish GitHub release artifacts
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*
           generate_release_notes: true
