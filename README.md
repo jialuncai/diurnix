@@ -43,14 +43,6 @@ make test-all
 
 四个完整离线示例位于 [`examples/`](examples/README.md)。命令与 Python API 说明见 [`docs/usage.md`](docs/usage.md) 和 [`docs/api.md`](docs/api.md)，设计边界见 [`docs/architecture.md`](docs/architecture.md)。
 
-## 诚实边界
-
-项目验证个人智能体的 mechanics，而不是任何真实 LLM 的对话能力。默认测试与示例使用 scripted、replay 或 loopback adapter 及带种植真值的合成数据；所有 accuracy、precision、recall、预算遵守率和 byte equality 都由实际合成运行计算。项目不包含预训练权重、外部数据集、真实用户数据或真实服务端点。
-
-## 时间线说明
-
-本项目于 2026 年 10 月创建和验证。Git 中 2025 年至 2026 年 10 月的日期是本次生成的演示时间线，不代表那些日期已经开展的工作。每次开发提交均执行构建、测试与格式检查；未使用空提交。项目未宣称论文成果、预训练模型或真实 LLM 成绩。
-
 ## 开发与许可
 
 完整检查运行 `make release`。贡献约定见 [`CONTRIBUTING.md`](CONTRIBUTING.md)，安全问题处理方式见 [`SECURITY.md`](SECURITY.md)。项目采用 [MIT License](LICENSE)。
